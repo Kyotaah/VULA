@@ -1,451 +1,404 @@
 --[[
-╔══════════════════════════════════════════════════════════════════════════════╗
-║  V U L A  ·  v2.0                                                           ║
-║  Custom UI Library · Beautiful redesign                                      ║
-╚══════════════════════════════════════════════════════════════════════════════╝
+    V U L A  ·  v2.2
+    Mobile-first: PlayerGui primary, instant visible, zero startup animation
 ]]
 
-local Vula = { Flags = {}, Version = "2.0" }
+local Vula = { Flags = {}, Version = "2.2" }
 local _g = type(getgenv)=="function" and getgenv() or {}
 if _g.VulaLoaded then return _g.VulaLib end
 
 -- ── Services ──────────────────────────────────────────────────────────────────
-local function gs(n) local s=game:GetService(n); return type(cloneref)=="function" and cloneref(s) or s end
-local Tween  = gs("TweenService")
-local UIS    = gs("UserInputService")
-local Run    = gs("RunService")
-local Core   = gs("CoreGui")
-local Plrs   = gs("Players")
-local Player = Plrs.LocalPlayer
+local TweenService    = game:GetService("TweenService")
+local UserInputService= game:GetService("UserInputService")
+local RunService      = game:GetService("RunService")
+local Players         = game:GetService("Players")
+local Player          = Players.LocalPlayer
+
+-- ── Safe parent — PlayerGui FIRST (works on every mobile executor) ────────────
+local function safeParent()
+    -- 1. PlayerGui — always works, highest compatibility
+    local ok, pg = pcall(function()
+        return Player:WaitForChild("PlayerGui", 5)
+    end)
+    if ok and pg then return pg end
+
+    -- 2. CoreGui with syn protection
+    local ok2 = pcall(function()
+        local t = Instance.new("ScreenGui")
+        t.Name = "__vtest"
+        if type(syn)=="table" and type(syn.protect_gui)=="function" then
+            syn.protect_gui(t)
+        end
+        t.Parent = game:GetService("CoreGui")
+        t:Destroy()
+    end)
+    if ok2 then return game:GetService("CoreGui") end
+
+    -- 3. Last resort
+    return Player.PlayerGui
+end
+
+-- ── Tween helper ──────────────────────────────────────────────────────────────
+local function tw(o, p, d, s, dr)
+    if not o then return end
+    pcall(TweenService.Create, TweenService, o,
+        TweenInfo.new(d or 0.3, s or Enum.EasingStyle.Exponential, dr or Enum.EasingDirection.Out), p)
+    local t = TweenService:Create(o,
+        TweenInfo.new(d or 0.3, s or Enum.EasingStyle.Exponential, dr or Enum.EasingDirection.Out), p)
+    if t then t:Play() end
+end
+
+-- ── Instance helpers ──────────────────────────────────────────────────────────
+local function ni(cls, par, props)
+    local i = Instance.new(cls)
+    if props then for k,v in pairs(props) do pcall(function() i[k]=v end) end end
+    if par then i.Parent = par end
+    return i
+end
+local function mkCorner(p, r)
+    ni("UICorner", p, {CornerRadius=UDim.new(0, r or 8)})
+end
+local function mkStroke(p, c, t, tr)
+    return ni("UIStroke", p, {Color=c or Color3.new(1,1,1), Thickness=t or 1, Transparency=tr or 0, ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+end
+local function mkPad(p,l,r,t,b)
+    ni("UIPadding",p,{PaddingLeft=UDim.new(0,l or 0),PaddingRight=UDim.new(0,r or 0),PaddingTop=UDim.new(0,t or 0),PaddingBottom=UDim.new(0,b or 0)})
+end
+local function mkList(p, gap)
+    ni("UIListLayout",p,{FillDirection=Enum.FillDirection.Vertical,HorizontalAlignment=Enum.HorizontalAlignment.Center,Padding=UDim.new(0,gap or 0),SortOrder=Enum.SortOrder.LayoutOrder})
+end
 
 -- ── Themes ────────────────────────────────────────────────────────────────────
 Vula.Theme = {
     JJK = {
-        Accent          = Color3.fromRGB(200, 28, 48),
-        AccentDark      = Color3.fromRGB(130, 15, 28),
-        AccentGlow      = Color3.fromRGB(200, 28, 48),
-        Window          = Color3.fromRGB(9, 9, 16),
-        Topbar          = Color3.fromRGB(12, 12, 22),
-        Sidebar         = Color3.fromRGB(10, 10, 19),
-        Card            = Color3.fromRGB(15, 15, 26),
-        CardHover       = Color3.fromRGB(20, 18, 32),
-        CardStroke      = Color3.fromRGB(38, 20, 28),
-        SectionText     = Color3.fromRGB(200, 28, 48),
-        Text            = Color3.fromRGB(220, 225, 245),
-        TextDim         = Color3.fromRGB(90, 100, 135),
-        ToggleOn        = Color3.fromRGB(200, 28, 48),
-        ToggleOff       = Color3.fromRGB(28, 18, 26),
-        ToggleKnob      = Color3.fromRGB(255, 255, 255),
-        TabSelected     = Color3.fromRGB(200, 28, 48),
-        TabUnselected   = Color3.fromRGB(15, 15, 26),
-        TabTextOn       = Color3.fromRGB(255, 255, 255),
-        TabTextOff      = Color3.fromRGB(80, 88, 120),
-        TopDivider      = Color3.fromRGB(38, 20, 28),
-        InputBg         = Color3.fromRGB(12, 12, 20),
-        Placeholder     = Color3.fromRGB(70, 78, 108),
-        PillBg          = Color3.fromRGB(14, 12, 22),
-        Shadow          = Color3.fromRGB(0, 0, 0),
-        NotifBg         = Color3.fromRGB(12, 12, 22),
+        Accent="c81c30", AccentDark="780e1a",
+        Window="09090f", Topbar="0c0c16",
+        Sidebar="0a0a13", Card="0f0e1a",
+        CardHover="151222", CardStroke="2a1420",
+        SectionText="c81c30", Text="dce0f5",
+        TextDim="555f82", ToggleOn="c81c30",
+        ToggleOff="1e1219", ToggleKnob="ffffff",
+        TabSel="c81c30", TabUnsel="0d0d17",
+        TabTextOn="ffffff", TabTextOff="4b5476",
+        Divider="2a1420", InputBg="0b0b14",
+        Placeholder="41476a", PillBg="0c0b15",
+        Shadow="000000", NotifBg="0b0b14",
     },
     Default = {
-        Accent          = Color3.fromRGB(50, 138, 220),
-        AccentDark      = Color3.fromRGB(30, 90, 155),
-        AccentGlow      = Color3.fromRGB(50, 138, 220),
-        Window          = Color3.fromRGB(22, 22, 22),
-        Topbar          = Color3.fromRGB(30, 30, 30),
-        Sidebar         = Color3.fromRGB(26, 26, 26),
-        Card            = Color3.fromRGB(32, 32, 32),
-        CardHover       = Color3.fromRGB(38, 38, 38),
-        CardStroke      = Color3.fromRGB(48, 48, 48),
-        SectionText     = Color3.fromRGB(50, 138, 220),
-        Text            = Color3.fromRGB(235, 235, 235),
-        TextDim         = Color3.fromRGB(130, 130, 130),
-        ToggleOn        = Color3.fromRGB(50, 138, 220),
-        ToggleOff       = Color3.fromRGB(55, 55, 55),
-        ToggleKnob      = Color3.fromRGB(255, 255, 255),
-        TabSelected     = Color3.fromRGB(50, 138, 220),
-        TabUnselected   = Color3.fromRGB(32, 32, 32),
-        TabTextOn       = Color3.fromRGB(255, 255, 255),
-        TabTextOff      = Color3.fromRGB(120, 120, 120),
-        TopDivider      = Color3.fromRGB(50, 50, 50),
-        InputBg         = Color3.fromRGB(24, 24, 24),
-        Placeholder     = Color3.fromRGB(100, 100, 100),
-        PillBg          = Color3.fromRGB(30, 30, 30),
-        Shadow          = Color3.fromRGB(0, 0, 0),
-        NotifBg         = Color3.fromRGB(28, 28, 28),
+        Accent="328adc", AccentDark="1c5a9b",
+        Window="161616", Topbar="1e1e1e",
+        Sidebar="1a1a1a", Card="212121",
+        CardHover="282828", CardStroke="323232",
+        SectionText="328adc", Text="ebebeb",
+        TextDim="7d7d7d", ToggleOn="328adc",
+        ToggleOff="3a3a3a", ToggleKnob="ffffff",
+        TabSel="328adc", TabUnsel="212121",
+        TabTextOn="ffffff", TabTextOff="737373",
+        Divider="323232", InputBg="181818",
+        Placeholder="626262", PillBg="1e1e1e",
+        Shadow="000000", NotifBg="1c1c1c",
     },
     Midnight = {
-        Accent          = Color3.fromRGB(88, 120, 255),
-        AccentDark      = Color3.fromRGB(50, 75, 180),
-        AccentGlow      = Color3.fromRGB(88, 120, 255),
-        Window          = Color3.fromRGB(8, 10, 20),
-        Topbar          = Color3.fromRGB(12, 15, 28),
-        Sidebar         = Color3.fromRGB(10, 12, 22),
-        Card            = Color3.fromRGB(14, 17, 32),
-        CardHover       = Color3.fromRGB(18, 22, 42),
-        CardStroke      = Color3.fromRGB(35, 42, 75),
-        SectionText     = Color3.fromRGB(88, 120, 255),
-        Text            = Color3.fromRGB(210, 215, 255),
-        TextDim         = Color3.fromRGB(85, 100, 150),
-        ToggleOn        = Color3.fromRGB(88, 120, 255),
-        ToggleOff       = Color3.fromRGB(28, 32, 58),
-        ToggleKnob      = Color3.fromRGB(255, 255, 255),
-        TabSelected     = Color3.fromRGB(88, 120, 255),
-        TabUnselected   = Color3.fromRGB(14, 17, 32),
-        TabTextOn       = Color3.fromRGB(255, 255, 255),
-        TabTextOff      = Color3.fromRGB(75, 88, 140),
-        TopDivider      = Color3.fromRGB(35, 42, 75),
-        InputBg         = Color3.fromRGB(10, 12, 22),
-        Placeholder     = Color3.fromRGB(70, 85, 130),
-        PillBg          = Color3.fromRGB(12, 15, 28),
-        Shadow          = Color3.fromRGB(0, 0, 0),
-        NotifBg         = Color3.fromRGB(12, 15, 28),
+        Accent="5878ff", AccentDark="3249b4",
+        Window="08090e", Topbar="0c0f1c",
+        Sidebar="0a0c16", Card="0e1120",
+        CardHover="12162a", CardStroke="23294b",
+        SectionText="5878ff", Text="d2d7ff",
+        TextDim="525994", ToggleOn="5878ff",
+        ToggleOff="1c203a", ToggleKnob="ffffff",
+        TabSel="5878ff", TabUnsel="0e1120",
+        TabTextOn="ffffff", TabTextOff="48527a",
+        Divider="23294b", InputBg="0a0c16",
+        Placeholder="444980", PillBg="0c0f1c",
+        Shadow="000000", NotifBg="0c0f1c",
     },
     Amethyst = {
-        Accent          = Color3.fromRGB(155, 85, 220),
-        AccentDark      = Color3.fromRGB(100, 50, 150),
-        AccentGlow      = Color3.fromRGB(155, 85, 220),
-        Window          = Color3.fromRGB(14, 10, 22),
-        Topbar          = Color3.fromRGB(20, 14, 32),
-        Sidebar         = Color3.fromRGB(16, 11, 26),
-        Card            = Color3.fromRGB(22, 15, 34),
-        CardHover       = Color3.fromRGB(28, 20, 44),
-        CardStroke      = Color3.fromRGB(60, 38, 82),
-        SectionText     = Color3.fromRGB(155, 85, 220),
-        Text            = Color3.fromRGB(230, 220, 255),
-        TextDim         = Color3.fromRGB(115, 90, 155),
-        ToggleOn        = Color3.fromRGB(155, 85, 220),
-        ToggleOff       = Color3.fromRGB(45, 28, 65),
-        ToggleKnob      = Color3.fromRGB(255, 255, 255),
-        TabSelected     = Color3.fromRGB(155, 85, 220),
-        TabUnselected   = Color3.fromRGB(22, 15, 34),
-        TabTextOn       = Color3.fromRGB(255, 255, 255),
-        TabTextOff      = Color3.fromRGB(100, 72, 138),
-        TopDivider      = Color3.fromRGB(60, 38, 82),
-        InputBg         = Color3.fromRGB(16, 11, 26),
-        Placeholder     = Color3.fromRGB(95, 70, 130),
-        PillBg          = Color3.fromRGB(20, 14, 32),
-        Shadow          = Color3.fromRGB(0, 0, 0),
-        NotifBg         = Color3.fromRGB(20, 14, 32),
+        Accent="9b55dc", AccentDark="5f3090",
+        Window="0e0a16", Topbar="140e20",
+        Sidebar="100b1a", Card="160f22",
+        CardHover="1c142c", CardStroke="3c2652",
+        SectionText="9b55dc", Text="e6dcff",
+        TextDim="705898", ToggleOn="9b55dc",
+        ToggleOff="2d1c41", ToggleKnob="ffffff",
+        TabSel="9b55dc", TabUnsel="160f22",
+        TabTextOn="ffffff", TabTextOff="624587",
+        Divider="3c2652", InputBg="100b1a",
+        Placeholder="5c4280", PillBg="140e20",
+        Shadow="000000", NotifBg="140e20",
     },
     Ocean = {
-        Accent          = Color3.fromRGB(0, 185, 185),
-        AccentDark      = Color3.fromRGB(0, 120, 120),
-        AccentGlow      = Color3.fromRGB(0, 185, 185),
-        Window          = Color3.fromRGB(8, 18, 22),
-        Topbar          = Color3.fromRGB(12, 24, 30),
-        Sidebar         = Color3.fromRGB(10, 20, 26),
-        Card            = Color3.fromRGB(14, 26, 34),
-        CardHover       = Color3.fromRGB(18, 32, 42),
-        CardStroke      = Color3.fromRGB(28, 58, 70),
-        SectionText     = Color3.fromRGB(0, 185, 185),
-        Text            = Color3.fromRGB(205, 238, 240),
-        TextDim         = Color3.fromRGB(70, 135, 148),
-        ToggleOn        = Color3.fromRGB(0, 185, 185),
-        ToggleOff       = Color3.fromRGB(20, 48, 58),
-        ToggleKnob      = Color3.fromRGB(255, 255, 255),
-        TabSelected     = Color3.fromRGB(0, 185, 185),
-        TabUnselected   = Color3.fromRGB(14, 26, 34),
-        TabTextOn       = Color3.fromRGB(255, 255, 255),
-        TabTextOff      = Color3.fromRGB(58, 118, 130),
-        TopDivider      = Color3.fromRGB(28, 58, 70),
-        InputBg         = Color3.fromRGB(10, 20, 26),
-        Placeholder     = Color3.fromRGB(55, 108, 120),
-        PillBg          = Color3.fromRGB(12, 24, 30),
-        Shadow          = Color3.fromRGB(0, 0, 0),
-        NotifBg         = Color3.fromRGB(12, 24, 30),
+        Accent="00b9b9", AccentDark="007676",
+        Window="08121a", Topbar="0c1820",
+        Sidebar="0a141c", Card="0e1a24",
+        CardHover="12202c", CardStroke="1c3a48",
+        SectionText="00b9b9", Text="cdf0f0",
+        TextDim="448491", ToggleOn="00b9b9",
+        ToggleOff="14303c", ToggleKnob="ffffff",
+        TabSel="00b9b9", TabUnsel="0e1a24",
+        TabTextOn="ffffff", TabTextOff="377380",
+        Divider="1c3a48", InputBg="0a141c",
+        Placeholder="346870", PillBg="0c1820",
+        Shadow="000000", NotifBg="0c1820",
     },
     Sakura = {
-        Accent          = Color3.fromRGB(238, 90, 148),
-        AccentDark      = Color3.fromRGB(165, 55, 98),
-        AccentGlow      = Color3.fromRGB(238, 90, 148),
-        Window          = Color3.fromRGB(18, 10, 15),
-        Topbar          = Color3.fromRGB(26, 14, 20),
-        Sidebar         = Color3.fromRGB(22, 12, 18),
-        Card            = Color3.fromRGB(30, 16, 24),
-        CardHover       = Color3.fromRGB(38, 20, 30),
-        CardStroke      = Color3.fromRGB(80, 38, 58),
-        SectionText     = Color3.fromRGB(238, 90, 148),
-        Text            = Color3.fromRGB(255, 228, 238),
-        TextDim         = Color3.fromRGB(148, 98, 122),
-        ToggleOn        = Color3.fromRGB(238, 90, 148),
-        ToggleOff       = Color3.fromRGB(55, 26, 40),
-        ToggleKnob      = Color3.fromRGB(255, 255, 255),
-        TabSelected     = Color3.fromRGB(238, 90, 148),
-        TabUnselected   = Color3.fromRGB(30, 16, 24),
-        TabTextOn       = Color3.fromRGB(255, 255, 255),
-        TabTextOff      = Color3.fromRGB(128, 78, 102),
-        TopDivider      = Color3.fromRGB(80, 38, 58),
-        InputBg         = Color3.fromRGB(22, 12, 18),
-        Placeholder     = Color3.fromRGB(118, 68, 90),
-        PillBg          = Color3.fromRGB(26, 14, 20),
-        Shadow          = Color3.fromRGB(0, 0, 0),
-        NotifBg         = Color3.fromRGB(26, 14, 20),
+        Accent="ee5a94", AccentDark="a2345f",
+        Window="120a0f", Topbar="1a0e14",
+        Sidebar="160c12", Card="1e1018",
+        CardHover="261420", CardStroke="50263a",
+        SectionText="ee5a94", Text="ffe4ee",
+        TextDim="915f76", ToggleOn="ee5a94",
+        ToggleOff="371a28", ToggleKnob="ffffff",
+        TabSel="ee5a94", TabUnsel="1e1018",
+        TabTextOn="ffffff", TabTextOff="7d4b62",
+        Divider="50263a", InputBg="160c12",
+        Placeholder="734158", PillBg="1a0e14",
+        Shadow="000000", NotifBg="1a0e14",
     },
     AmberGlow = {
-        Accent          = Color3.fromRGB(245, 148, 30),
-        AccentDark      = Color3.fromRGB(168, 95, 15),
-        AccentGlow      = Color3.fromRGB(245, 148, 30),
-        Window          = Color3.fromRGB(16, 11, 5),
-        Topbar          = Color3.fromRGB(24, 16, 8),
-        Sidebar         = Color3.fromRGB(20, 13, 6),
-        Card            = Color3.fromRGB(28, 18, 8),
-        CardHover       = Color3.fromRGB(36, 24, 10),
-        CardStroke      = Color3.fromRGB(88, 56, 18),
-        SectionText     = Color3.fromRGB(245, 148, 30),
-        Text            = Color3.fromRGB(255, 242, 218),
-        TextDim         = Color3.fromRGB(158, 118, 68),
-        ToggleOn        = Color3.fromRGB(245, 148, 30),
-        ToggleOff       = Color3.fromRGB(58, 38, 14),
-        ToggleKnob      = Color3.fromRGB(255, 255, 255),
-        TabSelected     = Color3.fromRGB(245, 148, 30),
-        TabUnselected   = Color3.fromRGB(28, 18, 8),
-        TabTextOn       = Color3.fromRGB(18, 10, 2),
-        TabTextOff      = Color3.fromRGB(138, 98, 48),
-        TopDivider      = Color3.fromRGB(88, 56, 18),
-        InputBg         = Color3.fromRGB(20, 13, 6),
-        Placeholder     = Color3.fromRGB(118, 85, 38),
-        PillBg          = Color3.fromRGB(24, 16, 8),
-        Shadow          = Color3.fromRGB(0, 0, 0),
-        NotifBg         = Color3.fromRGB(24, 16, 8),
+        Accent="f5941e", AccentDark="a55c0c",
+        Window="100b05", Topbar="181008",
+        Sidebar="140d06", Card="1c1208",
+        CardHover="24180a", CardStroke="583812",
+        SectionText="f5941e", Text="fff2da",
+        TextDim="9b7341", ToggleOn="f5941e",
+        ToggleOff="3a260e", ToggleKnob="ffffff",
+        TabSel="f5941e", TabUnsel="1c1208",
+        TabTextOn="120a02", TabTextOff="875f2d",
+        Divider="583812", InputBg="140d06",
+        Placeholder="735223", PillBg="181008",
+        Shadow="000000", NotifBg="181008",
     },
     Light = {
-        Accent          = Color3.fromRGB(50, 138, 220),
-        AccentDark      = Color3.fromRGB(30, 95, 165),
-        AccentGlow      = Color3.fromRGB(50, 138, 220),
-        Window          = Color3.fromRGB(248, 248, 248),
-        Topbar          = Color3.fromRGB(235, 235, 235),
-        Sidebar         = Color3.fromRGB(240, 240, 240),
-        Card            = Color3.fromRGB(255, 255, 255),
-        CardHover       = Color3.fromRGB(242, 242, 248),
-        CardStroke      = Color3.fromRGB(215, 215, 220),
-        SectionText     = Color3.fromRGB(50, 138, 220),
-        Text            = Color3.fromRGB(30, 30, 30),
-        TextDim         = Color3.fromRGB(140, 140, 145),
-        ToggleOn        = Color3.fromRGB(50, 138, 220),
-        ToggleOff       = Color3.fromRGB(195, 195, 198),
-        ToggleKnob      = Color3.fromRGB(255, 255, 255),
-        TabSelected     = Color3.fromRGB(50, 138, 220),
-        TabUnselected   = Color3.fromRGB(255, 255, 255),
-        TabTextOn       = Color3.fromRGB(255, 255, 255),
-        TabTextOff      = Color3.fromRGB(140, 140, 145),
-        TopDivider      = Color3.fromRGB(215, 215, 220),
-        InputBg         = Color3.fromRGB(240, 240, 240),
-        Placeholder     = Color3.fromRGB(175, 175, 178),
-        PillBg          = Color3.fromRGB(235, 235, 235),
-        Shadow          = Color3.fromRGB(160, 160, 165),
-        NotifBg         = Color3.fromRGB(250, 250, 250),
+        Accent="328adc", AccentDark="1c5a9b",
+        Window="f8f8f8", Topbar="ebebeb",
+        Sidebar="f0f0f0", Card="ffffff",
+        CardHover="f2f2f8", CardStroke="d7d7dc",
+        SectionText="328adc", Text="1e1e1e",
+        TextDim="8a8a8e", ToggleOn="328adc",
+        ToggleOff="c3c3c6", ToggleKnob="ffffff",
+        TabSel="328adc", TabUnsel="ffffff",
+        TabTextOn="ffffff", TabTextOff="8a8a8e",
+        Divider="d7d7dc", InputBg="f0f0f0",
+        Placeholder="acacaf", PillBg="ebebeb",
+        Shadow="9b9ba0", NotifBg="fafafa",
     },
 }
 
--- ── Helpers ───────────────────────────────────────────────────────────────────
-local function tw(o, p, d, s, dr)
-    if not o then return end
-    pcall(function()
-        Tween:Create(o, TweenInfo.new(d or 0.3, s or Enum.EasingStyle.Exponential, dr or Enum.EasingDirection.Out), p):Play()
-    end)
+-- Convert hex to Color3
+local function hex(h)
+    h = h:gsub("#","")
+    return Color3.fromRGB(
+        tonumber(h:sub(1,2),16),
+        tonumber(h:sub(3,4),16),
+        tonumber(h:sub(5,6),16)
+    )
 end
-local function n(cls, par, props)
-    local i = Instance.new(cls)
-    if props then for k,v in pairs(props) do i[k]=v end end
-    if par then i.Parent=par end
-    return i
-end
-local function C(p,r)   n("UICorner",p,{CornerRadius=UDim.new(0,r or 8)}) end
-local function S(p,c,t,tr) n("UIStroke",p,{Color=c,Thickness=t or 1,Transparency=tr or 0,ApplyStrokeMode=Enum.ApplyStrokeMode.Border}) end
-local function P(p,l,r,t,b) n("UIPadding",p,{PaddingLeft=UDim.new(0,l or 0),PaddingRight=UDim.new(0,r or 0),PaddingTop=UDim.new(0,t or 0),PaddingBottom=UDim.new(0,b or 0)}) end
-local function L(p,gap) n("UIListLayout",p,{FillDirection=Enum.FillDirection.Vertical,HorizontalAlignment=Enum.HorizontalAlignment.Center,VerticalAlignment=Enum.VerticalAlignment.Top,Padding=UDim.new(0,gap or 0),SortOrder=Enum.SortOrder.LayoutOrder}) end
-local function Sha(par,zi,transp)
-    n("ImageLabel",par,{
-        Size=UDim2.new(1,50,1,50),Position=UDim2.new(.5,0,.5,5),AnchorPoint=Vector2.new(.5,.5),
-        BackgroundTransparency=1,Image="rbxassetid://6014261993",ImageColor3=Color3.new(0,0,0),
-        ImageTransparency=transp or 0.5,ScaleType=Enum.ScaleType.Slice,SliceCenter=Rect.new(49,49,450,450),ZIndex=zi or 0,
-    })
-end
-local function safeP()
-    local ok=pcall(function() local t=n("ScreenGui");t.Name="__vt";if type(syn)=="table" and syn.protect_gui then pcall(syn.protect_gui,t)end;t.Parent=Core;t:Destroy()end)
-    return ok and Core or Player:WaitForChild("PlayerGui",10)
+-- Resolve theme (strings → Color3)
+local function resolveTheme(t)
+    local out = {}
+    for k,v in pairs(t) do
+        out[k] = type(v)=="string" and hex(v) or v
+    end
+    return out
 end
 
 -- ── Notifications ─────────────────────────────────────────────────────────────
 local _nsg, _nst = nil, {}
-local NW,NH,NG = 295,68,6
+local NW,NH,NG = 292,66,6
 
 local function getNSG()
     if _nsg and _nsg.Parent then return _nsg end
-    _nsg = n("ScreenGui",safeP(),{Name="VulaNotifs",DisplayOrder=200,IgnoreGuiInset=true,ResetOnSpawn=false})
-    if type(syn)=="table" and syn.protect_gui then pcall(syn.protect_gui,_nsg)end
+    _nsg = ni("ScreenGui", safeParent(), {
+        Name="VulaNotifs", DisplayOrder=200,
+        ResetOnSpawn=false,
+    })
     return _nsg
 end
 
 local function repack()
-    local vpH=workspace.CurrentCamera.ViewportSize.Y
+    local vpH = workspace.CurrentCamera.ViewportSize.Y
     for i,nf in ipairs(_nst) do
         if nf and nf.Parent then
-            tw(nf,{Position=UDim2.new(1,-10,1-(i*(NH+NG)/vpH),0)},0.4,Enum.EasingStyle.Back)
+            tw(nf, {Position=UDim2.new(1,-8,1-(i*(NH+NG)/vpH),0)}, 0.4, Enum.EasingStyle.Back)
         end
     end
 end
 
 function Vula:Notify(opts)
-    local T=opts.Title or "Vula"; local C2=opts.Content or ""; local D=opts.Duration or 4.5
-    local th=self._theme or Vula.Theme.Default
-    local sg=getNSG()
-    if #_nst>=5 then local o=table.remove(_nst,1); if o and o.Parent then o:Destroy()end end
-    local idx=#_nst+1
-    local vpH=workspace.CurrentCamera.ViewportSize.Y
-    local sy=1-idx*(NH+NG)/vpH
+    local T  = opts.Title   or "Vula"
+    local C2 = opts.Content or ""
+    local D  = opts.Duration or 4.5
+    local th = self._theme  or resolveTheme(Vula.Theme.Default)
+    local sg = getNSG()
 
-    local h=n("Frame",sg,{
-        Size=UDim2.new(0,NW-24,0,NH-12),Position=UDim2.new(1.1,0,sy,0),
-        AnchorPoint=Vector2.new(1,1),BackgroundColor3=th.NotifBg,ZIndex=10,
+    if #_nst >= 5 then
+        local o = table.remove(_nst,1)
+        if o and o.Parent then o:Destroy() end
+    end
+
+    local idx = #_nst+1
+    local vpH = workspace.CurrentCamera.ViewportSize.Y
+    local sy  = 1 - idx*(NH+NG)/vpH
+
+    local h = ni("Frame",sg,{
+        Size=UDim2.new(0,NW,0,NH),
+        Position=UDim2.new(1.1,0,sy,0),
+        AnchorPoint=Vector2.new(1,1),
+        BackgroundColor3=th.NotifBg,
+        ZIndex=10,
     })
-    C(h,12); S(h,th.CardStroke,1,0.3); Sha(h,9,0.62)
+    mkCorner(h,10)
+    mkStroke(h, th.CardStroke, 1, 0.2)
 
-    -- accent left bar
-    local ab=n("Frame",h,{Size=UDim2.new(0,3,.6,0),Position=UDim2.new(0,10,.2,0),BackgroundColor3=th.Accent,ZIndex=12})
-    C(ab,2)
-    -- accent glow strip at top
-    local gt=n("Frame",h,{Size=UDim2.new(1,0,0,2),BackgroundColor3=th.Accent,BackgroundTransparency=0.55,ZIndex=12})
-    C(gt,12)
+    -- top accent strip
+    local ts=ni("Frame",h,{Size=UDim2.new(1,0,0,2),BackgroundColor3=th.Accent,ZIndex=12})
+    mkCorner(ts,10)
+    -- left accent bar
+    local ab=ni("Frame",h,{Size=UDim2.new(0,3,.58,0),Position=UDim2.new(0,9,.21,0),BackgroundColor3=th.Accent,ZIndex=12})
+    mkCorner(ab,2)
 
-    local tl=n("TextLabel",h,{Size=UDim2.new(1,-28,0,20),Position=UDim2.new(0,20,0,10),BackgroundTransparency=1,Text=T,TextColor3=th.Text,Font=Enum.Font.GothamBold,TextSize=12,TextXAlignment=Enum.TextXAlignment.Left,TextTransparency=1,ZIndex=12})
-    local bl=n("TextLabel",h,{Size=UDim2.new(1,-28,0,16),Position=UDim2.new(0,20,0,32),BackgroundTransparency=1,Text=C2,TextColor3=th.TextDim,Font=Enum.Font.GothamMedium,TextSize=10,TextXAlignment=Enum.TextXAlignment.Left,TextTruncate=Enum.TextTruncate.AtEnd,TextTransparency=1,ZIndex=12})
+    local tl=ni("TextLabel",h,{
+        Size=UDim2.new(1,-26,0,20), Position=UDim2.new(0,18,0,8),
+        BackgroundTransparency=1, Text=T,
+        TextColor3=th.Text, Font=Enum.Font.GothamBold, TextSize=12,
+        TextXAlignment=Enum.TextXAlignment.Left, TextTransparency=1, ZIndex=12,
+    })
+    local bl=ni("TextLabel",h,{
+        Size=UDim2.new(1,-26,0,18), Position=UDim2.new(0,18,0,30),
+        BackgroundTransparency=1, Text=C2,
+        TextColor3=th.TextDim, Font=Enum.Font.GothamMedium, TextSize=10,
+        TextXAlignment=Enum.TextXAlignment.Left,
+        TextTruncate=Enum.TextTruncate.AtEnd,
+        TextTransparency=1, ZIndex=12,
+    })
 
     -- timer bar
-    local tbg=n("Frame",h,{Size=UDim2.new(1,-20,0,2),Position=UDim2.new(0,10,1,-4),AnchorPoint=Vector2.new(0,1),BackgroundColor3=th.CardStroke,ZIndex=12})
-    C(tbg,1)
-    local tf=n("Frame",tbg,{Size=UDim2.new(1,0,1,0),BackgroundColor3=th.Accent,ZIndex=13})
-    C(tf,1)
+    local tbg=ni("Frame",h,{Size=UDim2.new(1,-18,0,2),Position=UDim2.new(0,9,1,-4),AnchorPoint=Vector2.new(0,1),BackgroundColor3=th.Divider,ZIndex=12})
+    mkCorner(tbg,1)
+    local tf=ni("Frame",tbg,{Size=UDim2.new(1,0,1,0),BackgroundColor3=th.Accent,ZIndex=13})
+    mkCorner(tf,1)
 
     _nst[idx]=h
-    h.Size=UDim2.new(0,NW-40,0,NH-18)
-    tw(h,{Position=UDim2.new(1,-10,sy,0),Size=UDim2.new(0,NW,0,NH)},0.5,Enum.EasingStyle.Back)
-    task.delay(0.08,function() tw(tl,{TextTransparency=0},0.28) tw(bl,{TextTransparency=0.28},0.28) end)
-    task.delay(0.2,function() if tf.Parent then tw(tf,{Size=UDim2.new(0,0,1,0)},D-0.2,Enum.EasingStyle.Linear)end end)
+    tw(h, {Position=UDim2.new(1,-8,sy,0)}, 0.5, Enum.EasingStyle.Back)
+    task.delay(0.1, function()
+        tw(tl,{TextTransparency=0},   0.28)
+        tw(bl,{TextTransparency=0.2}, 0.28)
+    end)
+    task.delay(0.2, function()
+        if tf.Parent then tw(tf,{Size=UDim2.new(0,0,1,0)},D-0.2,Enum.EasingStyle.Linear) end
+    end)
 
     local done=false
     local function dis()
         if done then return end; done=true
         tw(tl,{TextTransparency=1},0.2); tw(bl,{TextTransparency=1},0.2)
-        tw(h,{BackgroundTransparency=1,Size=UDim2.new(0,NW-20,0,NH-10)},0.28,Enum.EasingStyle.Quint)
-        tw(h,{Position=UDim2.new(1.12,0,sy,0)},0.35,Enum.EasingStyle.Quint,Enum.EasingDirection.In)
-        task.delay(0.38,function()
+        tw(h,{BackgroundTransparency=1},0.25,Enum.EasingStyle.Quint)
+        tw(h,{Position=UDim2.new(1.1,0,sy,0)},0.32,Enum.EasingStyle.Quint,Enum.EasingDirection.In)
+        task.delay(0.35,function()
             for i,nf in ipairs(_nst) do if nf==h then table.remove(_nst,i);break end end
-            if h.Parent then h:Destroy()end; repack()
+            if h.Parent then h:Destroy() end; repack()
         end)
     end
-    h.InputBegan:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then dis()end end)
+    h.InputBegan:Connect(function(i)
+        if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then dis() end
+    end)
     task.delay(D,dis); repack()
 end
 
 -- ── CreateWindow ──────────────────────────────────────────────────────────────
 function Vula:CreateWindow(opts)
-    local title    = opts.Name            or "Vula"
-    local loadT    = opts.LoadingTitle    or title
-    local loadS    = opts.LoadingSubtitle or "Loading..."
-    local tname    = opts.Theme           or "Default"
-    local th       = Vula.Theme[tname]    or Vula.Theme.Default
-    self._theme    = th
+    local title  = opts.Name            or "Vula"
+    local loadT  = opts.LoadingTitle    or title
+    local loadS  = opts.LoadingSubtitle or "Loading..."
+    local tname  = opts.Theme           or "Default"
+    local th     = resolveTheme(Vula.Theme[tname] or Vula.Theme.Default)
+    self._theme  = th
 
-    -- Layout constants
-    local WW,WH     = 520, 480
-    local TOPBAR_H  = 52
-    local SIDEBAR_W = 155
-    local PILL_W    = 160
-    local PILL_H    = 36
+    local WW,WH    = 520, 480
+    local TOP_H    = 52
+    local SIDE_W   = 155
+    local PILL_W   = 160
+    local PILL_H   = 36
 
-    -- ── ScreenGui ─────────────────────────────────────────────────────────────
-    local sg=n("ScreenGui",safeP(),{Name="Vula",DisplayOrder=100,IgnoreGuiInset=true,ResetOnSpawn=false,ZIndexBehavior=Enum.ZIndexBehavior.Sibling})
-    if type(syn)=="table" and syn.protect_gui then pcall(syn.protect_gui,sg)end
-    pcall(function() for _,c in ipairs(safeP():GetChildren()) do if c.Name=="Vula" and c~=sg then c:Destroy()end end end)
+    -- Kill old instances
+    local par = safeParent()
+    pcall(function()
+        for _,c in ipairs(par:GetChildren()) do
+            if c.Name=="Vula" then c:Destroy() end
+        end
+    end)
 
-    -- Window shadow
-    local wsha=n("ImageLabel",sg,{
-        Size=UDim2.new(0,WW+60,0,WH+60),Position=UDim2.new(.5,0,.5,0),AnchorPoint=Vector2.new(.5,.5),
-        BackgroundTransparency=1,Image="rbxassetid://6014261993",ImageColor3=th.Shadow,
-        ImageTransparency=0.45,ScaleType=Enum.ScaleType.Slice,SliceCenter=Rect.new(49,49,450,450),ZIndex=1,
+    -- ── ScreenGui — NO IgnoreGuiInset (breaks on some mobile executors) ───────
+    local sg = ni("ScreenGui", par, {
+        Name="Vula",
+        DisplayOrder=100,
+        ResetOnSpawn=false,
+        -- IgnoreGuiInset intentionally omitted — causes blank on some executors
     })
 
-    -- Main window frame
-    local Main=n("Frame",sg,{
-        Size=UDim2.new(0,WW,0,0),Position=UDim2.new(.5,0,.5,0),AnchorPoint=Vector2.new(.5,.5),
-        BackgroundColor3=th.Window,ZIndex=2,ClipsDescendants=true,
+    -- ── Main window — FULL SIZE, FULLY VISIBLE from frame 1 ──────────────────
+    local Main = ni("Frame", sg, {
+        Name="Main",
+        Size=UDim2.new(0,WW,0,WH),
+        Position=UDim2.new(0.5,0,0.5,0),
+        AnchorPoint=Vector2.new(0.5,0.5),
+        BackgroundColor3=th.Window,
+        BackgroundTransparency=0,   -- VISIBLE IMMEDIATELY
+        ZIndex=2,
+        ClipsDescendants=true,
     })
-    C(Main,12)
-    S(Main,th.CardStroke,1,0.4)
+    mkCorner(Main,12)
+    mkStroke(Main,th.CardStroke,1,0.3)
 
-    -- Subtle gradient overlay on entire window
-    n("UIGradient",Main,{
-        Rotation=90,
-        ColorSequence=ColorSequence.new({
-            ColorSequenceKeypoint.new(0,Color3.fromRGB(255,255,255)),
-            ColorSequenceKeypoint.new(1,Color3.fromRGB(200,200,200)),
-        }),
-        Transparency=NumberSequence.new({
-            NumberSequenceKeypoint.new(0,0.97),
-            NumberSequenceKeypoint.new(1,0.99),
-        }),
+    -- ── Topbar ────────────────────────────────────────────────────────────────
+    local TB=ni("Frame",Main,{
+        Size=UDim2.new(1,0,0,TOP_H),
+        BackgroundColor3=th.Topbar, ZIndex=5,
     })
+    mkCorner(TB,12)
+    ni("Frame",TB,{Size=UDim2.new(1,0,.5,0),Position=UDim2.new(0,0,.5,0),BackgroundColor3=th.Topbar,ZIndex=5})
+    -- accent top glow line
+    ni("Frame",TB,{Size=UDim2.new(1,0,0,2),BackgroundColor3=th.Accent,BackgroundTransparency=0.25,ZIndex=8})
+    -- bottom divider
+    ni("Frame",TB,{Size=UDim2.new(1,0,0,1),Position=UDim2.new(0,0,1,-1),BackgroundColor3=th.Divider,ZIndex=6})
 
-    -- ══ TOPBAR ════════════════════════════════════════════════════════════════
-    local TB=n("Frame",Main,{
-        Name="Topbar",Size=UDim2.new(1,0,0,TOPBAR_H),
-        BackgroundColor3=th.Topbar,ZIndex=5,
-    })
-    -- square bottom corners
-    n("Frame",TB,{Size=UDim2.new(1,0,.5,0),Position=UDim2.new(0,0,.5,0),BackgroundColor3=th.Topbar,ZIndex=5})
-    -- bottom divider line with accent tint
-    local tdiv=n("Frame",TB,{Size=UDim2.new(1,0,0,1),Position=UDim2.new(0,0,1,-1),BackgroundColor3=th.TopDivider,ZIndex=6})
-
-    -- Accent top line (thin glow strip at very top of topbar)
-    local topGlow=n("Frame",TB,{
-        Size=UDim2.new(1,0,0,2),BackgroundColor3=th.Accent,BackgroundTransparency=0.35,ZIndex=7,
-    })
-
-    -- App icon circle
-    local iconCircle=n("Frame",TB,{
+    -- Badge icon
+    local badge=ni("Frame",TB,{
         Size=UDim2.new(0,30,0,30),Position=UDim2.new(0,14,0.5,0),AnchorPoint=Vector2.new(0,.5),
         BackgroundColor3=th.Accent,ZIndex=6,
     })
-    C(iconCircle,15)
-    n("UIGradient",iconCircle,{
-        Rotation=135,
-        ColorSequence=ColorSequence.new(th.Accent,th.AccentDark),
+    mkCorner(badge,15)
+    ni("UIGradient",badge,{Rotation=135,ColorSequence=ColorSequence.new(th.Accent,th.AccentDark)})
+    ni("TextLabel",badge,{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text="呪",TextColor3=Color3.new(1,1,1),Font=Enum.Font.GothamBold,TextSize=14,ZIndex=7})
+
+    -- Title + sub
+    ni("TextLabel",TB,{
+        Size=UDim2.new(1,-140,0,22),Position=UDim2.new(0,52,0,6),
+        BackgroundTransparency=1, Text=title,
+        TextColor3=th.Text, Font=Enum.Font.GothamBold, TextSize=14,
+        TextXAlignment=Enum.TextXAlignment.Left, ZIndex=6,
     })
-    n("TextLabel",iconCircle,{
-        Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,
-        Text="呪",TextColor3=Color3.new(1,1,1),Font=Enum.Font.GothamBold,TextSize=13,ZIndex=7,
+    ni("TextLabel",TB,{
+        Size=UDim2.new(1,-140,0,14),Position=UDim2.new(0,52,0,29),
+        BackgroundTransparency=1, Text="Vula v2.2",
+        TextColor3=th.TextDim, Font=Enum.Font.GothamMedium, TextSize=10,
+        TextXAlignment=Enum.TextXAlignment.Left, ZIndex=6,
     })
 
-    -- Title + subtitle stack
-    n("TextLabel",TB,{
-        Size=UDim2.new(1,-140,0,20),Position=UDim2.new(0,52,0,7),
-        BackgroundTransparency=1,Text=title,
-        TextColor3=th.Text,Font=Enum.Font.GothamBold,TextSize=14,
-        TextXAlignment=Enum.TextXAlignment.Left,ZIndex=6,
-    })
-    n("TextLabel",TB,{
-        Size=UDim2.new(1,-140,0,14),Position=UDim2.new(0,52,0,28),
-        BackgroundTransparency=1,Text="Vula v2.0",
-        TextColor3=th.TextDim,Font=Enum.Font.GothamMedium,TextSize=10,
-        TextXAlignment=Enum.TextXAlignment.Left,ZIndex=6,
-    })
-
-    -- macOS-style orbs (top-right)
+    -- macOS orbs
     local function mkOrb(xOff,col,sym)
-        local orb=n("TextButton",TB,{
-            Size=UDim2.new(0,14,0,14),Position=UDim2.new(1,xOff,0.5,0),AnchorPoint=Vector2.new(1,.5),
-            BackgroundColor3=col,BackgroundTransparency=0.15,Text="",ZIndex=7,AutoButtonColor=false,
-        })
-        C(orb,7)
-        local lbl=n("TextLabel",orb,{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text=sym,TextColor3=Color3.fromRGB(30,20,20),Font=Enum.Font.GothamBold,TextSize=9,TextTransparency=1,ZIndex=8})
-        orb.MouseEnter:Connect(function() tw(orb,{BackgroundTransparency=0},0.12); tw(lbl,{TextTransparency=0},0.12) end)
-        orb.MouseLeave:Connect(function() tw(orb,{BackgroundTransparency=0.15},0.12); tw(lbl,{TextTransparency=1},0.12) end)
-        return orb, lbl
+        local o=ni("TextButton",TB,{
+            Size=UDim2.new(0,14,0,14),Position=UDim2.new(1,xOff,0.5,0),
+            AnchorPoint=Vector2.new(1,.5),BackgroundColor3=col,
+            BackgroundTransparency=0.15,Text="",ZIndex=7,AutoButtonColor=false,
+        }); mkCorner(o,7)
+        local lbl=ni("TextLabel",o,{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text=sym,TextColor3=Color3.fromRGB(25,15,15),Font=Enum.Font.GothamBold,TextSize=9,TextTransparency=1,ZIndex=8})
+        o.MouseEnter:Connect(function() tw(o,{BackgroundTransparency=0},0.1); tw(lbl,{TextTransparency=0},0.1) end)
+        o.MouseLeave:Connect(function() tw(o,{BackgroundTransparency=0.15},0.1); tw(lbl,{TextTransparency=1},0.1) end)
+        return o
     end
-    local closeOrb = mkOrb(-14, Color3.fromRGB(255,59,48), "×")
-    local minOrb   = mkOrb(-34, Color3.fromRGB(255,149,0), "–")
+    local orbClose = mkOrb(-14, Color3.fromRGB(255,59,48),  "×")
+    local orbMin   = mkOrb(-34, Color3.fromRGB(255,149,0),  "–")
 
     -- Topbar drag
     do
@@ -453,159 +406,145 @@ function Vula:CreateWindow(opts)
         TB.InputBegan:Connect(function(i,gpe)
             if gpe then return end
             if i.UserInputType~=Enum.UserInputType.MouseButton1 and i.UserInputType~=Enum.UserInputType.Touch then return end
-            drag=true; local m=UIS:GetMouseLocation(); dsx,dsy=m.X,m.Y
+            drag=true
+            local m=UserInputService:GetMouseLocation(); dsx,dsy=m.X,m.Y
             ox=Main.Position.X.Offset; oy=Main.Position.Y.Offset
-            local c; c=Run.RenderStepped:Connect(function()
-                if not drag then c:Disconnect(); return end
-                local m2=UIS:GetMouseLocation()
-                local nx=ox+(m2.X-dsx); local ny=oy+(m2.Y-dsy)
-                Main.Position=UDim2.new(.5,nx,.5,ny); wsha.Position=UDim2.new(.5,nx,.5,ny)
+            local c; c=RunService.RenderStepped:Connect(function()
+                if not drag then c:Disconnect();return end
+                local m2=UserInputService:GetMouseLocation()
+                Main.Position=UDim2.new(.5,ox+(m2.X-dsx),.5,oy+(m2.Y-dsy))
             end)
         end)
-        UIS.InputEnded:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then drag=false end end)
+        UserInputService.InputEnded:Connect(function(i)
+            if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then drag=false end
+        end)
     end
 
-    -- ══ SIDEBAR ═══════════════════════════════════════════════════════════════
-    local SB=n("Frame",Main,{
-        Size=UDim2.new(0,SIDEBAR_W,1,-TOPBAR_H),Position=UDim2.new(0,0,0,TOPBAR_H),
+    -- ── Sidebar ───────────────────────────────────────────────────────────────
+    local SB=ni("Frame",Main,{
+        Size=UDim2.new(0,SIDE_W,1,-TOP_H),Position=UDim2.new(0,0,0,TOP_H),
         BackgroundColor3=th.Sidebar,ZIndex=4,
     })
-    -- square top-right and bottom-right corners
-    n("Frame",SB,{Size=UDim2.new(0,12,1,0),Position=UDim2.new(1,-12,0,0),BackgroundColor3=th.Sidebar,ZIndex=4})
-    -- sidebar right edge divider
-    n("Frame",SB,{Size=UDim2.new(0,1,1,0),Position=UDim2.new(1,-1,0,0),BackgroundColor3=th.TopDivider,BackgroundTransparency=0.5,ZIndex=5})
+    ni("Frame",SB,{Size=UDim2.new(0,12,1,0),Position=UDim2.new(1,-12,0,0),BackgroundColor3=th.Sidebar,ZIndex=4})
+    ni("Frame",SB,{Size=UDim2.new(0,1,1,0),Position=UDim2.new(1,-1,0,0),BackgroundColor3=th.Divider,BackgroundTransparency=0.4,ZIndex=5})
 
-    local tabScroll=n("ScrollingFrame",SB,{
+    local tabScroll=ni("ScrollingFrame",SB,{
         Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,BorderSizePixel=0,
-        ScrollBarThickness=0,AutomaticCanvasSize=Enum.AutomaticSize.Y,CanvasSize=UDim2.new(0,0,0,0),ZIndex=5,
+        ScrollBarThickness=0,AutomaticCanvasSize=Enum.AutomaticSize.Y,
+        CanvasSize=UDim2.new(0,0,0,0),ZIndex=5,
     })
-    L(tabScroll, 5)
-    P(tabScroll, 10,10,14,10)
+    mkList(tabScroll,5); mkPad(tabScroll,10,10,14,10)
 
-    -- ══ CONTENT ═══════════════════════════════════════════════════════════════
-    local Content=n("Frame",Main,{
-        Size=UDim2.new(1,-SIDEBAR_W,1,-TOPBAR_H),Position=UDim2.new(0,SIDEBAR_W,0,TOPBAR_H),
+    -- ── Content ───────────────────────────────────────────────────────────────
+    local Content=ni("Frame",Main,{
+        Size=UDim2.new(1,-SIDE_W,1,-TOP_H),Position=UDim2.new(0,SIDE_W,0,TOP_H),
         BackgroundTransparency=1,ClipsDescendants=true,ZIndex=3,
     })
 
-    -- ══ LOADING SCREEN ════════════════════════════════════════════════════════
-    local LD=n("Frame",Main,{Size=UDim2.new(1,0,1,0),BackgroundColor3=th.Window,ZIndex=25})
-    C(LD,12)
-    -- Loading logo
-    local ldCircle=n("Frame",LD,{Size=UDim2.new(0,52,0,52),Position=UDim2.new(.5,0,.35,0),AnchorPoint=Vector2.new(.5,.5),BackgroundColor3=th.Accent,ZIndex=26})
-    C(ldCircle,26)
-    n("UIGradient",ldCircle,{Rotation=135,ColorSequence=ColorSequence.new(th.Accent,th.AccentDark)})
-    n("TextLabel",ldCircle,{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text="呪",TextColor3=Color3.new(1,1,1),Font=Enum.Font.GothamBold,TextSize=22,ZIndex=27})
-    n("TextLabel",LD,{Size=UDim2.new(.8,0,0,26),Position=UDim2.new(.1,0,.44,0),BackgroundTransparency=1,Text=loadT,TextColor3=th.Text,Font=Enum.Font.GothamBold,TextSize=16,ZIndex=26})
-    n("TextLabel",LD,{Size=UDim2.new(.8,0,0,18),Position=UDim2.new(.1,0,.56,0),BackgroundTransparency=1,Text=loadS,TextColor3=th.TextDim,Font=Enum.Font.GothamMedium,TextSize=11,ZIndex=26})
-    local lbg=n("Frame",LD,{Size=UDim2.new(.55,0,0,3),Position=UDim2.new(.225,0,.66,0),BackgroundColor3=th.CardStroke,ZIndex=26}); C(lbg,2)
-    local lfill=n("Frame",lbg,{Size=UDim2.new(0,0,1,0),BackgroundColor3=th.Accent,ZIndex=27}); C(lfill,2)
+    -- ── Loading overlay ───────────────────────────────────────────────────────
+    local LD=ni("Frame",Main,{Size=UDim2.new(1,0,1,0),BackgroundColor3=th.Window,ZIndex=25})
+    mkCorner(LD,12)
+    local ldB=ni("Frame",LD,{Size=UDim2.new(0,50,0,50),Position=UDim2.new(.5,0,.35,0),AnchorPoint=Vector2.new(.5,.5),BackgroundColor3=th.Accent,ZIndex=26})
+    mkCorner(ldB,25)
+    ni("UIGradient",ldB,{Rotation=135,ColorSequence=ColorSequence.new(th.Accent,th.AccentDark)})
+    ni("TextLabel",ldB,{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text="呪",TextColor3=Color3.new(1,1,1),Font=Enum.Font.GothamBold,TextSize=20,ZIndex=27})
+    ni("TextLabel",LD,{Size=UDim2.new(.8,0,0,24),Position=UDim2.new(.1,0,.45,0),BackgroundTransparency=1,Text=loadT,TextColor3=th.Text,Font=Enum.Font.GothamBold,TextSize=15,ZIndex=26})
+    ni("TextLabel",LD,{Size=UDim2.new(.8,0,0,18),Position=UDim2.new(.1,0,.56,0),BackgroundTransparency=1,Text=loadS,TextColor3=th.TextDim,Font=Enum.Font.GothamMedium,TextSize=11,ZIndex=26})
+    local lbg=ni("Frame",LD,{Size=UDim2.new(.55,0,0,3),Position=UDim2.new(.225,0,.67,0),BackgroundColor3=th.Divider,ZIndex=26}); mkCorner(lbg,2)
+    local lfil=ni("Frame",lbg,{Size=UDim2.new(0,0,1,0),BackgroundColor3=th.Accent,ZIndex=27}); mkCorner(lfil,2)
     task.spawn(function()
-        tw(lfill,{Size=UDim2.new(1,0,1,0)},1.6,Enum.EasingStyle.Quint); task.wait(1.85)
-        tw(LD,{BackgroundTransparency=1},0.45,Enum.EasingStyle.Exponential)
+        tw(lfil,{Size=UDim2.new(1,0,1,0)},1.6,Enum.EasingStyle.Quint)
+        task.wait(1.85)
+        tw(LD,{BackgroundTransparency=1},0.4)
         for _,d in ipairs(LD:GetDescendants()) do
-            if d:IsA("TextLabel") then tw(d,{TextTransparency=1},0.35)
-            elseif d:IsA("Frame") then tw(d,{BackgroundTransparency=1},0.35)end
+            if d:IsA("TextLabel") then tw(d,{TextTransparency=1},0.3)
+            elseif d:IsA("Frame") then tw(d,{BackgroundTransparency=1},0.3) end
         end
-        task.wait(0.5); LD.Visible=false
+        task.wait(0.45); LD.Visible=false
     end)
 
-    -- ══ BOTTOM PILL ═══════════════════════════════════════════════════════════
-    local Pill=n("Frame",sg,{
-        Size=UDim2.new(0,PILL_W,0,PILL_H),Position=UDim2.new(.5,0,1,-10),AnchorPoint=Vector2.new(.5,1),
+    -- ── Bottom Pill ───────────────────────────────────────────────────────────
+    local Pill=ni("Frame",sg,{
+        Size=UDim2.new(0,PILL_W,0,PILL_H),
+        Position=UDim2.new(0.5,0,1,-48),   -- above bottom (accounts for no IgnoreGuiInset)
+        AnchorPoint=Vector2.new(0.5,1),
         BackgroundColor3=th.PillBg,ZIndex=55,
     })
-    C(Pill,PILL_H//2)
-    S(Pill,th.Accent,1.5,0.25)
-    -- Pill glow
-    n("ImageLabel",Pill,{
-        Size=UDim2.new(1,44,1,44),Position=UDim2.new(.5,0,.5,0),AnchorPoint=Vector2.new(.5,.5),
-        BackgroundTransparency=1,Image="rbxassetid://6014261993",ImageColor3=th.AccentGlow,
-        ImageTransparency=0.72,ScaleType=Enum.ScaleType.Slice,SliceCenter=Rect.new(49,49,450,450),ZIndex=54,
-    })
-    -- Inner subtle gradient
-    n("UIGradient",Pill,{
+    mkCorner(Pill,PILL_H//2)
+    mkStroke(Pill,th.Accent,1.5,0.2)
+    ni("UIGradient",Pill,{
         Rotation=90,
         ColorSequence=ColorSequence.new(th.Accent,th.PillBg),
-        Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,0.88),NumberSequenceKeypoint.new(1,0.96)}),
+        Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,0.87),NumberSequenceKeypoint.new(1,0.95)}),
     })
 
-    local pillLbl=n("TextLabel",Pill,{
-        Size=UDim2.new(1,-10,1,0),Position=UDim2.new(0,5,0,0),BackgroundTransparency=1,
-        Text="▲  "..title,TextColor3=th.Text,Font=Enum.Font.GothamBold,TextSize=11,ZIndex=56,
+    local pillLbl=ni("TextLabel",Pill,{
+        Size=UDim2.new(1,-10,1,0),Position=UDim2.new(0,5,0,0),
+        BackgroundTransparency=1,Text="▲  "..title,
+        TextColor3=th.Text,Font=Enum.Font.GothamBold,TextSize=11,ZIndex=56,
     })
 
-    -- Pill horizontal drag
+    -- Pill drag (horizontal)
     do
-        local drag,dsx,sx=false,0,0
-        local dc
+        local drag,dsx,sx=false,0,0; local dc
         Pill.InputBegan:Connect(function(i,gpe)
             if gpe then return end
             if i.UserInputType~=Enum.UserInputType.MouseButton1 and i.UserInputType~=Enum.UserInputType.Touch then return end
-            drag=true; dsx=UIS:GetMouseLocation().X; sx=Pill.Position.X.Offset
-            if dc then dc:Disconnect()end
-            dc=Run.Heartbeat:Connect(function()
+            drag=true; dsx=UserInputService:GetMouseLocation().X; sx=Pill.Position.X.Offset
+            if dc then dc:Disconnect() end
+            dc=RunService.Heartbeat:Connect(function()
                 if not drag then dc:Disconnect();return end
-                local m=UIS:GetMouseLocation()
-                Pill.Position=UDim2.new(.5,sx+(m.X-dsx),1,-10)
+                Pill.Position=UDim2.new(0.5,sx+(UserInputService:GetMouseLocation().X-dsx),1,-48)
             end)
         end)
-        UIS.InputEnded:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then drag=false end end)
+        UserInputService.InputEnded:Connect(function(i)
+            if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then drag=false end
+        end)
     end
 
-    -- ══ WINDOW STATE ══════════════════════════════════════════════════════════
+    -- ── Window toggle (fade) ──────────────────────────────────────────────────
     local Hidden,Minimised,Deb=false,false,false
 
     local function open()
         if Deb then return end; Deb=true; Hidden=false
-        Main.Visible=true; wsha.Visible=true
-        Main.Size=UDim2.new(0,WW,0,0)
-        tw(Main,{Size=UDim2.new(0,WW,0,WH)},0.55,Enum.EasingStyle.Exponential)
-        tw(wsha,{Size=UDim2.new(0,WW+60,0,WH+60),ImageTransparency=0.45},0.55)
+        Main.Visible=true
+        tw(Main,{BackgroundTransparency=0},0.4)
         pillLbl.Text="▲  "..title
-        task.delay(0.57,function() Deb=false end)
+        task.delay(0.42,function() Deb=false end)
     end
-
     local function close(silent)
         if Deb then return end; Deb=true; Hidden=true
-        tw(Main,{Size=UDim2.new(0,WW,0,0)},0.45,Enum.EasingStyle.Exponential)
-        tw(wsha,{ImageTransparency=1},0.3)
+        tw(Main,{BackgroundTransparency=1},0.32)
         pillLbl.Text="▼  "..title
-        task.delay(0.47,function() Main.Visible=false; wsha.Visible=false; Deb=false end)
+        task.delay(0.34,function() Main.Visible=false; Deb=false end)
         if not silent then Vula:Notify({Title="Vula Hidden",Content="RightShift or pill to reopen.",Duration=4}) end
     end
-
     local function toggle() if Hidden then open() else close(true) end end
 
-    -- Orb clicks
-    closeOrb.MouseButton1Click:Connect(function() close(true) end)
-    minOrb.MouseButton1Click:Connect(function()
+    orbClose.MouseButton1Click:Connect(function() close(true) end)
+    orbMin.MouseButton1Click:Connect(function()
         Minimised=not Minimised
         if Minimised then
             SB.Visible=false; Content.Visible=false
-            tw(Main,{Size=UDim2.new(0,WW,0,TOPBAR_H)},0.35,Enum.EasingStyle.Exponential)
+            tw(Main,{Size=UDim2.new(0,WW,0,TOP_H)},0.32)
         else
-            tw(Main,{Size=UDim2.new(0,WW,0,WH)},0.45,Enum.EasingStyle.Back)
-            task.delay(0.2,function() SB.Visible=true; Content.Visible=true end)
+            tw(Main,{Size=UDim2.new(0,WW,0,WH)},0.42,Enum.EasingStyle.Back)
+            task.delay(0.18,function() SB.Visible=true; Content.Visible=true end)
         end
     end)
 
-    -- Pill
-    local pbtn=n("TextButton",Pill,{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text="",ZIndex=57,AutoButtonColor=false})
+    local pbtn=ni("TextButton",Pill,{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text="",ZIndex=57,AutoButtonColor=false})
     pbtn.MouseButton1Click:Connect(toggle)
-    pbtn.MouseEnter:Connect(function() tw(Pill,{Size=UDim2.new(0,PILL_W+18,0,PILL_H+4)},0.22,Enum.EasingStyle.Back) end)
+    pbtn.MouseEnter:Connect(function() tw(Pill,{Size=UDim2.new(0,PILL_W+16,0,PILL_H+4)},0.2,Enum.EasingStyle.Back) end)
     pbtn.MouseLeave:Connect(function() tw(Pill,{Size=UDim2.new(0,PILL_W,0,PILL_H)},0.18) end)
-    pbtn.MouseButton1Down:Connect(function() tw(Pill,{Size=UDim2.new(0,PILL_W-12,0,PILL_H-5)},0.1,Enum.EasingStyle.Quint) end)
+    pbtn.MouseButton1Down:Connect(function() tw(Pill,{Size=UDim2.new(0,PILL_W-10,0,PILL_H-4)},0.1,Enum.EasingStyle.Quint) end)
 
-    UIS.InputBegan:Connect(function(i,gpe) if gpe then return end if i.KeyCode==Enum.KeyCode.RightShift then toggle()end end)
-
-    -- Open animation
-    task.delay(0.1,function()
-        tw(Main,{Size=UDim2.new(0,WW,0,WH)},0.6,Enum.EasingStyle.Exponential)
-        tw(wsha,{ImageTransparency=0.45},0.6)
+    UserInputService.InputBegan:Connect(function(i,gpe)
+        if gpe then return end
+        if i.KeyCode==Enum.KeyCode.RightShift then toggle() end
     end)
 
-    -- ══ TAB SYSTEM ════════════════════════════════════════════════════════════
+    -- ── Tab system ────────────────────────────────────────────────────────────
     local _tabs,_btns,_active={},{},0
 
     local function selTab(idx)
@@ -615,15 +554,14 @@ function Vula:CreateWindow(opts)
             local b=_btns[i]; if not b then continue end
             local lbl=b:FindFirstChildWhichIsA("TextLabel")
             local bar=b:FindFirstChild("_bar")
-            local ic=b:FindFirstChild("_icon")
             if i==idx then
-                tw(b,{BackgroundColor3=th.TabSelected,BackgroundTransparency=0},0.28)
-                if lbl then tw(lbl,{TextColor3=th.TabTextOn,TextTransparency=0},0.22) end
-                if bar then tw(bar,{BackgroundTransparency=0},0.22) end
+                tw(b,{BackgroundColor3=th.TabSel,BackgroundTransparency=0},0.25)
+                if lbl then tw(lbl,{TextColor3=th.TabTextOn,TextTransparency=0},0.2) end
+                if bar then tw(bar,{BackgroundTransparency=0},0.2) end
             else
-                tw(b,{BackgroundColor3=th.TabUnselected,BackgroundTransparency=0.5},0.28)
-                if lbl then tw(lbl,{TextColor3=th.TabTextOff,TextTransparency=0.25},0.22) end
-                if bar then tw(bar,{BackgroundTransparency=1},0.22) end
+                tw(b,{BackgroundColor3=th.TabUnsel,BackgroundTransparency=0.5},0.25)
+                if lbl then tw(lbl,{TextColor3=th.TabTextOff,TextTransparency=0.25},0.2) end
+                if bar then tw(bar,{BackgroundTransparency=1},0.2) end
             end
         end
         _active=idx
@@ -631,137 +569,88 @@ function Vula:CreateWindow(opts)
 
     local Win={}
 
-    function Win:CreateTab(name, _icon)
+    function Win:CreateTab(name,_icon)
         local idx=#_tabs+1; local first=(idx==1)
 
-        -- Tab button in sidebar
-        local btn=n("TextButton",tabScroll,{
+        local btn=ni("TextButton",tabScroll,{
             Name="Tab_"..name,Size=UDim2.new(1,0,0,42),
-            BackgroundColor3=first and th.TabSelected or th.TabUnselected,
+            BackgroundColor3=first and th.TabSel or th.TabUnsel,
             BackgroundTransparency=first and 0 or 0.5,
             Text="",ZIndex=6,AutoButtonColor=false,LayoutOrder=idx,
         })
-        C(btn,10)
-
-        -- Left accent bar
-        local bar=n("Frame",btn,{Name="_bar",Size=UDim2.new(0,3,.6,0),Position=UDim2.new(0,0,.2,0),BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=first and 0 or 1,ZIndex=7}); C(bar,2)
-
-        local lbl=n("TextLabel",btn,{
-            Size=UDim2.new(1,-18,1,0),Position=UDim2.new(0,16,0,0),
+        mkCorner(btn,10)
+        local bar=ni("Frame",btn,{Name="_bar",Size=UDim2.new(0,3,.6,0),Position=UDim2.new(0,0,.2,0),BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=first and 0 or 1,ZIndex=7})
+        mkCorner(bar,2)
+        ni("TextLabel",btn,{
+            Size=UDim2.new(1,-16,1,0),Position=UDim2.new(0,14,0,0),
             BackgroundTransparency=1,Text=name,
             TextColor3=first and th.TabTextOn or th.TabTextOff,
             Font=Enum.Font.GothamBold,TextSize=11,
             TextXAlignment=Enum.TextXAlignment.Left,
             TextTransparency=first and 0 or 0.25,ZIndex=7,
         })
-
         btn.MouseButton1Click:Connect(function() selTab(idx) end)
         btn.MouseEnter:Connect(function() if _active~=idx then tw(btn,{BackgroundTransparency=0.2},0.18) end end)
         btn.MouseLeave:Connect(function() if _active~=idx then tw(btn,{BackgroundTransparency=0.5},0.18) end end)
 
-        -- Content scroll page
-        local page=n("ScrollingFrame",Content,{
-            Name="Page_"..name,Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,
-            BorderSizePixel=0,ScrollBarThickness=3,ScrollBarImageColor3=th.Accent,
-            ScrollBarImageTransparency=0.55,AutomaticCanvasSize=Enum.AutomaticSize.Y,
-            CanvasSize=UDim2.new(0,0,0,0),Visible=first,ZIndex=4,ClipsDescendants=true,
+        local page=ni("ScrollingFrame",Content,{
+            Name="Page_"..name,Size=UDim2.new(1,0,1,0),
+            BackgroundTransparency=1,BorderSizePixel=0,
+            ScrollBarThickness=3,ScrollBarImageColor3=th.Accent,
+            ScrollBarImageTransparency=0.5,
+            AutomaticCanvasSize=Enum.AutomaticSize.Y,
+            CanvasSize=UDim2.new(0,0,0,0),
+            Visible=first,ZIndex=4,ClipsDescendants=true,
         })
-        L(page,8); P(page,10,10,14,14)
+        mkList(page,8); mkPad(page,10,10,14,14)
 
         local tab={page=page,_n=0}
         _tabs[idx]=tab; _btns[idx]=btn
         if first then _active=1 end
-
         local function eo() tab._n=tab._n+1; return tab._n end
 
-        -- ─── Section ──────────────────────────────────────────────────────────
-        function tab:CreateSection(secName)
-            -- spacing
-            n("Frame",page,{Size=UDim2.new(1,0,0,4),BackgroundTransparency=1,ZIndex=4,LayoutOrder=eo()})
-            local sf=n("Frame",page,{Name="Section",Size=UDim2.new(1,0,0,22),BackgroundTransparency=1,ZIndex=4,LayoutOrder=eo()})
-            n("TextLabel",sf,{
-                Size=UDim2.new(1,-4,1,0),Position=UDim2.new(0,2,0,0),BackgroundTransparency=1,
-                Text=secName,TextColor3=th.SectionText,Font=Enum.Font.GothamBold,
-                TextSize=10,TextXAlignment=Enum.TextXAlignment.Left,TextTransparency=0.1,ZIndex=5,
-            })
-            -- divider
-            local dv=n("Frame",sf,{Size=UDim2.new(1,0,0,1),Position=UDim2.new(0,0,1,-1),BackgroundColor3=th.CardStroke,BackgroundTransparency=0.4,ZIndex=5})
+        function tab:CreateSection(s)
+            ni("Frame",page,{Size=UDim2.new(1,0,0,4),BackgroundTransparency=1,ZIndex=4,LayoutOrder=eo()})
+            local sf=ni("Frame",page,{Size=UDim2.new(1,0,0,24),BackgroundTransparency=1,ZIndex=4,LayoutOrder=eo()})
+            ni("TextLabel",sf,{Size=UDim2.new(1,-4,1,0),Position=UDim2.new(0,2,0,0),BackgroundTransparency=1,Text=s,TextColor3=th.SectionText,Font=Enum.Font.GothamBold,TextSize=10,TextXAlignment=Enum.TextXAlignment.Left,ZIndex=5})
+            ni("Frame",sf,{Size=UDim2.new(1,0,0,1),Position=UDim2.new(0,0,1,-1),BackgroundColor3=th.Divider,BackgroundTransparency=0.3,ZIndex=5})
         end
 
-        -- ─── Toggle ───────────────────────────────────────────────────────────
         function tab:CreateToggle(o)
-            local tName=o.Name or "Toggle"; local defV=o.CurrentValue or false
-            local flag=o.Flag; local cb=o.Callback
-            local val=defV
+            local tN=o.Name or "Toggle"; local dV=o.CurrentValue or false
+            local fl=o.Flag; local cb=o.Callback; local val=dV
 
-            local row=n("Frame",page,{
-                Size=UDim2.new(1,0,0,52),BackgroundColor3=th.Card,
-                ZIndex=5,LayoutOrder=eo(),
-            })
-            C(row,10)
-            local rowSt=n("UIStroke",row,{Color=th.CardStroke,Thickness=1,Transparency=0.3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
-            -- subtle left accent
-            local la=n("Frame",row,{Size=UDim2.new(0,3,0.55,0),Position=UDim2.new(0,0,0.225,0),BackgroundColor3=th.Accent,BackgroundTransparency=val and 0.5 or 1,ZIndex=6}); C(la,2)
+            local row=ni("Frame",page,{Size=UDim2.new(1,0,0,52),BackgroundColor3=th.Card,ZIndex=5,LayoutOrder=eo()})
+            mkCorner(row,10)
+            local rSt=mkStroke(row,th.CardStroke,1,0.28)
+            local la=ni("Frame",row,{Size=UDim2.new(0,3,.55,0),Position=UDim2.new(0,0,.225,0),BackgroundColor3=th.Accent,BackgroundTransparency=val and 0.4 or 1,ZIndex=6}); mkCorner(la,2)
+            ni("TextLabel",row,{Size=UDim2.new(1,-80,1,0),Position=UDim2.new(0,16,0,0),BackgroundTransparency=1,Text=tN,TextColor3=th.Text,Font=Enum.Font.GothamSemibold,TextSize=12,TextXAlignment=Enum.TextXAlignment.Left,ZIndex=6})
 
-            n("TextLabel",row,{
-                Size=UDim2.new(1,-80,1,0),Position=UDim2.new(0,16,0,0),
-                BackgroundTransparency=1,Text=tName,TextColor3=th.Text,
-                Font=Enum.Font.GothamSemibold,TextSize=12,TextXAlignment=Enum.TextXAlignment.Left,ZIndex=6,
-            })
-
-            -- Toggle pill
-            local PW,PH,KS=48,26,20
-            local K0,K1=3,48-3-20
-
-            local pill=n("Frame",row,{
-                Size=UDim2.new(0,PW,0,PH),Position=UDim2.new(1,-(PW+14),.5,0),AnchorPoint=Vector2.new(0,.5),
-                BackgroundColor3=val and th.ToggleOn or th.ToggleOff,ZIndex=6,
-            })
-            C(pill,PH//2)
-            -- pill inner shadow
-            n("UIGradient",pill,{
-                Rotation=90,
-                ColorSequence=ColorSequence.new(Color3.new(1,1,1),Color3.new(0,0,0)),
-                Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,0.92),NumberSequenceKeypoint.new(1,0.78)}),
-            })
-            local pillSt=n("UIStroke",pill,{Color=val and th.ToggleOn or th.CardStroke,Thickness=1,Transparency=val and 0.55 or 0.2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
-
-            local knob=n("Frame",pill,{
-                Size=UDim2.new(0,KS,0,KS),Position=UDim2.new(0,val and K1 or K0,.5,0),AnchorPoint=Vector2.new(0,.5),
-                BackgroundColor3=th.ToggleKnob,ZIndex=7,
-            })
-            C(knob,KS//2)
-            Sha(knob,8,0.65)
-
-            -- Glow behind pill when on
-            local pillGlow=n("ImageLabel",pill,{
-                Size=UDim2.new(1,20,1,20),Position=UDim2.new(.5,0,.5,0),AnchorPoint=Vector2.new(.5,.5),
-                BackgroundTransparency=1,Image="rbxassetid://6014261993",ImageColor3=th.Accent,
-                ImageTransparency=val and 0.7 or 1,ScaleType=Enum.ScaleType.Slice,SliceCenter=Rect.new(49,49,450,450),ZIndex=5,
-            })
+            local PW,PH,KS=48,26,20; local K0,K1=3,25
+            local pill=ni("Frame",row,{Size=UDim2.new(0,PW,0,PH),Position=UDim2.new(1,-(PW+14),.5,0),AnchorPoint=Vector2.new(0,.5),BackgroundColor3=val and th.ToggleOn or th.ToggleOff,ZIndex=6})
+            mkCorner(pill,PH//2)
+            local pSt=mkStroke(pill,val and th.ToggleOn or th.CardStroke,1,val and 0.5 or 0.15)
+            local knob=ni("Frame",pill,{Size=UDim2.new(0,KS,0,KS),Position=UDim2.new(0,val and K1 or K0,.5,0),AnchorPoint=Vector2.new(0,.5),BackgroundColor3=th.ToggleKnob,ZIndex=7})
+            mkCorner(knob,KS//2)
 
             local tog={CurrentValue=val,Type="Toggle"}
-
             local function apply(v)
                 val=v; tog.CurrentValue=v
-                tw(pill,{BackgroundColor3=v and th.ToggleOn or th.ToggleOff},0.32)
-                tw(pillSt,{Color=v and th.ToggleOn or th.CardStroke,Transparency=v and 0.55 or 0.2},0.32)
-                tw(pillGlow,{ImageTransparency=v and 0.7 or 1},0.3)
-                tw(la,{BackgroundTransparency=v and 0.5 or 1},0.3)
-                -- knob: squish + spring
+                tw(pill,{BackgroundColor3=v and th.ToggleOn or th.ToggleOff},0.3)
+                tw(pSt,{Color=v and th.ToggleOn or th.CardStroke,Transparency=v and 0.5 or 0.15},0.3)
+                tw(la,{BackgroundTransparency=v and 0.4 or 1},0.3)
+                tw(rSt,{Color=v and th.Accent or th.CardStroke,Transparency=v and 0.55 or 0.28},0.3)
                 tw(knob,{Size=UDim2.new(0,KS*1.38,0,KS*0.72)},0.08,Enum.EasingStyle.Sine)
                 task.delay(0.08,function()
                     if not knob.Parent then return end
                     tw(knob,{Size=UDim2.new(0,KS,0,KS),Position=UDim2.new(0,v and K1 or K0,.5,0)},0.44,Enum.EasingStyle.Back,Enum.EasingDirection.Out)
                 end)
                 local tl=row:FindFirstChildWhichIsA("TextLabel")
-                if tl then tw(tl,{TextColor3=v and th.Text or th.TextDim},0.28) end
-                tw(rowSt,{Color=v and th.Accent or th.CardStroke,Transparency=v and 0.6 or 0.3},0.32)
+                if tl then tw(tl,{TextColor3=v and th.Text or th.TextDim},0.25) end
             end
-
             function tog:Set(v) apply(v); if cb then cb(v) end end
 
-            local hit=n("TextButton",row,{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text="",ZIndex=9,AutoButtonColor=false})
+            local hit=ni("TextButton",row,{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text="",ZIndex=9,AutoButtonColor=false})
             hit.MouseEnter:Connect(function() tw(row,{BackgroundColor3=th.CardHover},0.18) end)
             hit.MouseLeave:Connect(function() tw(row,{BackgroundColor3=th.Card},0.18) end)
             hit.MouseButton1Down:Connect(function() tw(pill,{Size=UDim2.new(0,PW*.87,0,PH*.83)},0.08,Enum.EasingStyle.Quint) end)
@@ -771,141 +660,52 @@ function Vula:CreateWindow(opts)
                 tw(pill,{Size=UDim2.new(0,PW,0,PH)},0.3,Enum.EasingStyle.Back,Enum.EasingDirection.Out)
                 tog:Set(not val)
             end)
-            if flag then Vula.Flags[flag]=tog end
+            if fl then Vula.Flags[fl]=tog end
             return tog
         end
 
-        -- ─── Button ───────────────────────────────────────────────────────────
         function tab:CreateButton(o)
-            local bName=o.Name or "Button"; local cb=o.Callback
-
-            local row=n("Frame",page,{
-                Size=UDim2.new(1,0,0,48),BackgroundColor3=th.Card,
-                ZIndex=5,LayoutOrder=eo(),ClipsDescendants=true,
-            })
-            C(row,10)
-            n("UIStroke",row,{Color=th.CardStroke,Thickness=1,Transparency=0.35,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
-
-            -- Accent left fill
-            local fill=n("Frame",row,{Size=UDim2.new(0,0,1,0),BackgroundColor3=th.Accent,BackgroundTransparency=0.88,ZIndex=5})
-            C(fill,10)
-
-            n("TextLabel",row,{
-                Size=UDim2.new(1,-42,1,0),Position=UDim2.new(0,16,0,0),
-                BackgroundTransparency=1,Text=bName,TextColor3=th.Text,
-                Font=Enum.Font.GothamSemibold,TextSize=12,TextXAlignment=Enum.TextXAlignment.Left,ZIndex=6,
-            })
-            -- Arrow
-            local arrow=n("TextLabel",row,{
-                Size=UDim2.new(0,24,1,0),Position=UDim2.new(1,-28,0,0),
-                BackgroundTransparency=1,Text="›",TextColor3=th.TextDim,
-                Font=Enum.Font.GothamBold,TextSize=18,ZIndex=6,
-            })
-
-            local rowSt=row:FindFirstChildWhichIsA("UIStroke")
-            local hit=n("TextButton",row,{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text="",ZIndex=9,AutoButtonColor=false})
-
-            hit.MouseEnter:Connect(function()
-                tw(row,{BackgroundColor3=th.CardHover},0.18)
-                tw(fill,{Size=UDim2.new(1,0,1,0),BackgroundTransparency=0.88},0.28)
-                tw(rowSt,{Color=th.Accent,Transparency=0.6},0.22)
-                tw(arrow,{TextColor3=th.Accent},0.18)
-            end)
-            hit.MouseLeave:Connect(function()
-                tw(row,{BackgroundColor3=th.Card},0.18)
-                tw(fill,{Size=UDim2.new(0,0,1,0)},0.22)
-                tw(rowSt,{Color=th.CardStroke,Transparency=0.35},0.22)
-                tw(arrow,{TextColor3=th.TextDim},0.18)
-            end)
-            -- Ripple
+            local bN=o.Name or "Button"; local cb=o.Callback
+            local row=ni("Frame",page,{Size=UDim2.new(1,0,0,48),BackgroundColor3=th.Card,ZIndex=5,LayoutOrder=eo(),ClipsDescendants=true})
+            mkCorner(row,10)
+            local rSt=mkStroke(row,th.CardStroke,1,0.32)
+            local fill=ni("Frame",row,{Size=UDim2.new(0,0,1,0),BackgroundColor3=th.Accent,BackgroundTransparency=0.9,ZIndex=5}); mkCorner(fill,10)
+            ni("TextLabel",row,{Size=UDim2.new(1,-40,1,0),Position=UDim2.new(0,16,0,0),BackgroundTransparency=1,Text=bN,TextColor3=th.Text,Font=Enum.Font.GothamSemibold,TextSize=12,TextXAlignment=Enum.TextXAlignment.Left,ZIndex=6})
+            local arr=ni("TextLabel",row,{Size=UDim2.new(0,24,1,0),Position=UDim2.new(1,-28,0,0),BackgroundTransparency=1,Text="›",TextColor3=th.TextDim,Font=Enum.Font.GothamBold,TextSize=18,ZIndex=6})
+            local hit=ni("TextButton",row,{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text="",ZIndex=9,AutoButtonColor=false})
+            hit.MouseEnter:Connect(function() tw(row,{BackgroundColor3=th.CardHover},0.18); tw(fill,{Size=UDim2.new(1,0,1,0)},0.28); tw(rSt,{Color=th.Accent,Transparency=0.6},0.22); tw(arr,{TextColor3=th.Accent},0.18) end)
+            hit.MouseLeave:Connect(function() tw(row,{BackgroundColor3=th.Card},0.18); tw(fill,{Size=UDim2.new(0,0,1,0)},0.22); tw(rSt,{Color=th.CardStroke,Transparency=0.32},0.22); tw(arr,{TextColor3=th.TextDim},0.18) end)
             hit.MouseButton1Down:Connect(function(mx,my)
                 local abs=row.AbsolutePosition
-                local rip=n("Frame",row,{
-                    Size=UDim2.new(0,0,0,0),Position=UDim2.new(0,mx-abs.X,0,my-abs.Y),
-                    AnchorPoint=Vector2.new(.5,.5),BackgroundColor3=th.Accent,
-                    BackgroundTransparency=0.72,ZIndex=10,
-                }); C(rip,999)
-                local sz=math.max(row.AbsoluteSize.X,row.AbsoluteSize.Y)*2.4
+                local rip=ni("Frame",row,{Size=UDim2.new(0,0,0,0),Position=UDim2.new(0,mx-abs.X,0,my-abs.Y),AnchorPoint=Vector2.new(.5,.5),BackgroundColor3=th.Accent,BackgroundTransparency=0.72,ZIndex=10}); mkCorner(rip,999)
+                local sz=math.max(row.AbsoluteSize.X,row.AbsoluteSize.Y)*2.5
                 tw(rip,{Size=UDim2.new(0,sz,0,sz),BackgroundTransparency=1},0.52,Enum.EasingStyle.Quint)
-                task.delay(0.54,function() if rip.Parent then rip:Destroy()end end)
+                task.delay(0.54,function() if rip.Parent then rip:Destroy() end end)
             end)
             local cd=false
-            hit.MouseButton1Click:Connect(function()
-                if cd then return end; cd=true; task.delay(0.3,function() cd=false end)
-                if cb then task.spawn(cb) end
-            end)
-            local bObj={}
-            function bObj:SetText(t) local l=row:FindFirstChildWhichIsA("TextLabel"); if l then l.Text=t end end
-            return bObj
+            hit.MouseButton1Click:Connect(function() if cd then return end; cd=true; task.delay(0.3,function() cd=false end); if cb then task.spawn(cb) end end)
+            local b={}; function b:SetText(t) local l=row:FindFirstChildWhichIsA("TextLabel"); if l then l.Text=t end end; return b
         end
 
-        -- ─── Label ────────────────────────────────────────────────────────────
         function tab:CreateLabel(text)
-            local row=n("Frame",page,{
-                Size=UDim2.new(1,0,0,38),BackgroundColor3=th.Card,ZIndex=5,LayoutOrder=eo(),
-            })
-            C(row,10)
-            n("UIStroke",row,{Color=th.CardStroke,Thickness=1,Transparency=0.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
-            local lbl=n("TextLabel",row,{
-                Size=UDim2.new(1,-14,1,0),Position=UDim2.new(0,14,0,0),BackgroundTransparency=1,
-                Text=text,TextColor3=th.TextDim,Font=Enum.Font.GothamMedium,TextSize=11,
-                TextXAlignment=Enum.TextXAlignment.Left,ZIndex=6,
-            })
+            local row=ni("Frame",page,{Size=UDim2.new(1,0,0,38),BackgroundColor3=th.Card,ZIndex=5,LayoutOrder=eo()})
+            mkCorner(row,10); mkStroke(row,th.CardStroke,1,0.48)
+            local lbl=ni("TextLabel",row,{Size=UDim2.new(1,-14,1,0),Position=UDim2.new(0,14,0,0),BackgroundTransparency=1,Text=text,TextColor3=th.TextDim,Font=Enum.Font.GothamMedium,TextSize=11,TextXAlignment=Enum.TextXAlignment.Left,ZIndex=6})
             return lbl
         end
 
-        -- ─── Keybind ──────────────────────────────────────────────────────────
         function tab:CreateKeybind(o)
-            local kName=o.Name or "Keybind"; local kDef=o.CurrentKeybind or "RightShift"
-            local flag=o.Flag; local cb=o.Callback; local cur=kDef; local listen=false
-
-            local row=n("Frame",page,{
-                Size=UDim2.new(1,0,0,52),BackgroundColor3=th.Card,ZIndex=5,LayoutOrder=eo(),
-            })
-            C(row,10); n("UIStroke",row,{Color=th.CardStroke,Thickness=1,Transparency=0.3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
-            n("TextLabel",row,{
-                Size=UDim2.new(1,-96,1,0),Position=UDim2.new(0,16,0,0),BackgroundTransparency=1,
-                Text=kName,TextColor3=th.Text,Font=Enum.Font.GothamSemibold,TextSize=12,
-                TextXAlignment=Enum.TextXAlignment.Left,ZIndex=6,
-            })
-            local chip=n("TextButton",row,{
-                Size=UDim2.new(0,78,0,28),Position=UDim2.new(1,-88,.5,0),AnchorPoint=Vector2.new(0,.5),
-                BackgroundColor3=th.InputBg,Text=cur,TextColor3=th.Accent,
-                Font=Enum.Font.GothamBold,TextSize=10,ZIndex=7,AutoButtonColor=false,
-            })
-            C(chip,6)
-            local chipSt=n("UIStroke",chip,{Color=th.Accent,Thickness=1,Transparency=0.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
-            chip.MouseButton1Click:Connect(function()
-                if listen then return end; listen=true; chip.Text="..."
-                tw(chip,{BackgroundColor3=th.Accent},0.18); tw(chipSt,{Transparency=0},0.18)
-            end)
-            UIS.InputBegan:Connect(function(i,gpe)
-                if not listen then return end
-                if i.UserInputType~=Enum.UserInputType.Keyboard then return end
-                listen=false; cur=i.KeyCode.Name; chip.Text=cur
-                tw(chip,{BackgroundColor3=th.InputBg},0.18); tw(chipSt,{Transparency=0.5},0.18)
-                if cb then cb() end
-            end)
-            local kb={CurrentKeybind=cur,Type="Keybind"}
-            function kb:Set(v) cur=v; chip.Text=v end
-            if flag then Vula.Flags[flag]=kb end
-            return kb
-        end
-
-        -- ─── Input ────────────────────────────────────────────────────────────
-        function tab:CreateInput(o)
-            local iName=o.Name or "Input"; local ph=o.PlaceholderText or "Type here..."; local flag=o.Flag; local cb=o.Callback
-            local row=n("Frame",page,{Size=UDim2.new(1,0,0,52),BackgroundColor3=th.Card,ZIndex=5,LayoutOrder=eo()})
-            C(row,10); n("UIStroke",row,{Color=th.CardStroke,Thickness=1,Transparency=0.3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
-            n("TextLabel",row,{Size=UDim2.new(.42,0,1,0),Position=UDim2.new(0,16,0,0),BackgroundTransparency=1,Text=iName,TextColor3=th.Text,Font=Enum.Font.GothamSemibold,TextSize=12,TextXAlignment=Enum.TextXAlignment.Left,ZIndex=6})
-            local box=n("Frame",row,{Size=UDim2.new(.52,0,0,30),Position=UDim2.new(1,-8,.5,0),AnchorPoint=Vector2.new(1,.5),BackgroundColor3=th.InputBg,ZIndex=6})
-            C(box,6); n("UIStroke",box,{Color=th.CardStroke,Thickness=1,Transparency=0.3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
-            local tb=n("TextBox",box,{Size=UDim2.new(1,-14,1,0),Position=UDim2.new(0,7,0,0),BackgroundTransparency=1,Text="",PlaceholderText=ph,PlaceholderColor3=th.Placeholder,TextColor3=th.Text,Font=Enum.Font.GothamMedium,TextSize=11,ZIndex=7,ClearTextOnFocus=false})
-            tb.FocusLost:Connect(function(e) if e and cb then cb(tb.Text) end end)
-            local inp={Value="",Type="Input"}
-            function inp:Set(v) tb.Text=v; inp.Value=v end
-            if flag then Vula.Flags[flag]=inp end
-            return inp
+            local kN=o.Name or "Keybind"; local kD=o.CurrentKeybind or "RightShift"
+            local fl=o.Flag; local cb=o.Callback; local cur=kD; local lst=false
+            local row=ni("Frame",page,{Size=UDim2.new(1,0,0,52),BackgroundColor3=th.Card,ZIndex=5,LayoutOrder=eo()})
+            mkCorner(row,10); mkStroke(row,th.CardStroke,1,0.28)
+            ni("TextLabel",row,{Size=UDim2.new(1,-96,1,0),Position=UDim2.new(0,16,0,0),BackgroundTransparency=1,Text=kN,TextColor3=th.Text,Font=Enum.Font.GothamSemibold,TextSize=12,TextXAlignment=Enum.TextXAlignment.Left,ZIndex=6})
+            local chip=ni("TextButton",row,{Size=UDim2.new(0,78,0,28),Position=UDim2.new(1,-88,.5,0),AnchorPoint=Vector2.new(0,.5),BackgroundColor3=th.InputBg,Text=cur,TextColor3=th.Accent,Font=Enum.Font.GothamBold,TextSize=10,ZIndex=7,AutoButtonColor=false})
+            mkCorner(chip,6); local cSt=mkStroke(chip,th.Accent,1,0.5)
+            chip.MouseButton1Click:Connect(function() if lst then return end; lst=true; chip.Text="..."; tw(chip,{BackgroundColor3=th.Accent},0.18); tw(cSt,{Transparency=0},0.18) end)
+            UserInputService.InputBegan:Connect(function(i,gpe) if not lst then return end; if i.UserInputType~=Enum.UserInputType.Keyboard then return end; lst=false; cur=i.KeyCode.Name; chip.Text=cur; tw(chip,{BackgroundColor3=th.InputBg},0.18); tw(cSt,{Transparency=0.5},0.18); if cb then cb() end end)
+            local kb={CurrentKeybind=cur,Type="Keybind"}; function kb:Set(v) cur=v; chip.Text=v end
+            if fl then Vula.Flags[fl]=kb end; return kb
         end
 
         return tab
