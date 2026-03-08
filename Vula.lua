@@ -214,8 +214,8 @@ function Vula:CreateWindow(opts)
     self._theme  = th
 
     -- ── Layout ────────────────────────────────────────────────────────────────
-    -- Compact: 400 × 340, fits most mobile screens
-    local WW,WH   = 400, 340
+    -- Exact size/position from Dex: Size {0,340},{0,230} · Pos {0.5,3},{0.5,-38}
+    local WW,WH   = 340, 230
     local TOP_H   = 44
     local SIDE_W  = 130
     local PILL_W  = 148
@@ -230,7 +230,7 @@ function Vula:CreateWindow(opts)
     -- ── Main ──────────────────────────────────────────────────────────────────
     local Main = ni("Frame", sg, {
         Name="Main", Size=UDim2.new(0,WW,0,WH),
-        Position=UDim2.new(.5,0,.5,0), AnchorPoint=Vector2.new(.5,.5),
+        Position=UDim2.new(.5,3,.5,-38), AnchorPoint=Vector2.new(.5,.5),
         BackgroundColor3=th.Window, ZIndex=2, ClipsDescendants=true,
     })
     C(Main, 12)
@@ -391,9 +391,9 @@ function Vula:CreateWindow(opts)
         Minimised=not Minimised
         if Minimised then
             SB.Visible=false; Content.Visible=false
-            tw(Main,{Size=UDim2.new(0,WW,0,TOP_H)},.3)
+            tw(Main,{Size=UDim2.new(0,340,0,TOP_H)},.3)
         else
-            tw(Main,{Size=UDim2.new(0,WW,0,WH)},.4,Enum.EasingStyle.Back)
+            tw(Main,{Size=UDim2.new(0,340,0,230)},.4,Enum.EasingStyle.Back)
             task.delay(.18,function() SB.Visible=true; Content.Visible=true end)
         end
     end)
