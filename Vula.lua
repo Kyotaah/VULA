@@ -321,7 +321,7 @@ function Vula:CreateWindow(opts)
     local vp   = workspace.CurrentCamera.ViewportSize
     local mob  = vp.X < 700
     local WW   = mob and math.min(340, vp.X - 16) or 340
-    local WH   = mob and math.min(260, vp.Y - 80)  or 230
+    local WH   = opts.Height or (mob and math.min(280, vp.Y - 80) or 265)
     local TOP_H  = 38
     local SIDE_W = 105
     local PILL_W = 148
@@ -416,9 +416,10 @@ function Vula:CreateWindow(opts)
 
     local tabSF = ni("ScrollingFrame",SB,{
         Size=UDim2.new(1,0,1,0), BackgroundTransparency=1, BorderSizePixel=0,
-        ScrollBarThickness=0, AutomaticCanvasSize=Enum.AutomaticSize.Y,
+        ScrollBarThickness=2, ScrollBarImageColor3=th.Acc, ScrollBarImageTransparency=.55,
+        AutomaticCanvasSize=Enum.AutomaticSize.Y,
         CanvasSize=UDim2.new(0,0,0,0), ZIndex=5,
-    }); LL(tabSF,3); Pd(tabSF,6,6,8,6)
+    }); LL(tabSF,3); Pd(tabSF,6,4,8,6)
 
     -- ── Content ───────────────────────────────────────────────────────────────
     local Cont = ni("Frame",Main,{
@@ -506,8 +507,7 @@ function Vula:CreateWindow(opts)
         else
             tw(Main,{Size=UDim2.new(0,WW,0,WH)},.35,Enum.EasingStyle.Back)
             task.delay(.15,function() SB.Visible=true; Cont.Visible=true end)
-        end
-    end)
+        end    end)
 
     local pb = ni("TextButton",Pill,{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text="",ZIndex=57,AutoButtonColor=false})
     pb.MouseButton1Click:Connect(toggle)
