@@ -386,6 +386,9 @@ function Vula:Notify(opts)
     local typ     = opts.Type     or "info"
     local th      = self._theme   or rt(Vula.Theme.Default)
     local nCol    = th[NOTIFY_COL[typ] or "NInfo"] or th.Acc
+    local mob2    = detectMobile()
+    local nW      = mob2 and 300 or 240
+    local nH      = mob2 and 66  or 52
 
     if #_nst >= 4 then
         local old = table.remove(_nst, 1)
@@ -394,17 +397,17 @@ function Vula:Notify(opts)
 
     local idx  = #_nst + 1
     local vpH  = workspace.CurrentCamera.ViewportSize.Y
-    local posY = 1 - idx * (NH + NG) / vpH
+    local posY = 1 - idx * (nH + NG) / vpH
 
     -- Notification frame
     local f = ni("Frame", getNSG(), {
-        Size            = UDim2.new(0, NW, 0, NH),
+        Size            = UDim2.new(0, nW, 0, nH),
         AnchorPoint     = Vector2.new(1, 1),
         Position        = UDim2.new(1.12, 0, posY, 0),
         BackgroundColor3 = th.NBg,
         ZIndex          = 200,
     })
-    C(f, 12)
+    C(f, 14)
     St(f, th.Stroke, 1, 0.08)
 
     -- Top accent bar
@@ -417,42 +420,44 @@ function Vula:Notify(opts)
 
     -- Left colour strip
     local strip = ni("Frame", f, {
-        Size             = UDim2.new(0, 3, 0.6, 0),
-        Position         = UDim2.new(0, 10, 0.2, 0),
+        Size             = UDim2.new(0, mob2 and 4 or 3, 0.6, 0),
+        Position         = UDim2.new(0, mob2 and 12 or 10, 0.2, 0),
         BackgroundColor3 = nCol,
         ZIndex           = 202,
     })
     C(strip, 2)
 
     -- Icon circle
+    local icoSz = mob2 and 28 or 20
     local iconCircle = ni("Frame", f, {
-        Size             = UDim2.new(0, 20, 0, 20),
-        Position         = UDim2.new(0, 17, 0.5, 0),
+        Size             = UDim2.new(0, icoSz, 0, icoSz),
+        Position         = UDim2.new(0, mob2 and 22 or 17, 0.5, 0),
         AnchorPoint      = Vector2.new(0, 0.5),
         BackgroundColor3 = nCol,
         BackgroundTransparency = 0.80,
         ZIndex           = 202,
     })
-    C(iconCircle, 10)
+    C(iconCircle, icoSz // 2)
     ni("TextLabel", iconCircle, {
         Size                = UDim2.new(1, 0, 1, 0),
         BackgroundTransparency = 1,
         Text                = NOTIFY_ICON[typ] or "●",
         TextColor3          = nCol,
         Font                = Enum.Font.GothamBold,
-        TextSize            = 9,
+        TextSize            = mob2 and 13 or 9,
         ZIndex              = 203,
     })
 
+    local txtOff = mob2 and 58 or 44
     -- Title
     local titleLbl = ni("TextLabel", f, {
-        Size                = UDim2.new(1, -50, 0, 16),
-        Position            = UDim2.new(0, 44, 0, 9),
+        Size                = UDim2.new(1, -(txtOff + 10), 0, mob2 and 20 or 16),
+        Position            = UDim2.new(0, txtOff, 0, mob2 and 11 or 9),
         BackgroundTransparency = 1,
         Text                = title,
         TextColor3          = th.Text,
         Font                = Enum.Font.GothamBold,
-        TextSize            = 11,
+        TextSize            = mob2 and 13 or 11,
         TextXAlignment      = Enum.TextXAlignment.Left,
         TextTransparency    = 1,
         ZIndex              = 202,
@@ -460,13 +465,13 @@ function Vula:Notify(opts)
 
     -- Body text
     local bodyLbl = ni("TextLabel", f, {
-        Size                = UDim2.new(1, -50, 0, 14),
-        Position            = UDim2.new(0, 44, 0, 27),
+        Size                = UDim2.new(1, -(txtOff + 10), 0, mob2 and 18 or 14),
+        Position            = UDim2.new(0, txtOff, 0, mob2 and 33 or 27),
         BackgroundTransparency = 1,
         Text                = content,
         TextColor3          = th.Dim,
         Font                = Enum.Font.GothamMedium,
-        TextSize            = 9,
+        TextSize            = mob2 and 11 or 9,
         TextXAlignment      = Enum.TextXAlignment.Left,
         TextTruncate        = Enum.TextTruncate.AtEnd,
         TextTransparency    = 1,
@@ -602,14 +607,14 @@ function Vula:CreateWindow(opts)
     -- Adaptive sizing
     local mob    = detectMobile()
     local vp     = workspace.CurrentCamera.ViewportSize
-    local WW     = mob and math.min(300, vp.X - 10) or 340
-    local WH     = opts.Height or (mob and math.min(270, vp.Y - 60) or 275)
-    local TOP_H  = mob and 34 or 38
-    local SIDE_W = mob and 90  or 108
-    local TAB_H_BTN = mob and 30 or 32
-    local FONT_SM   = mob and 9  or 9
-    local FONT_MD   = mob and 10 or 10
-    local FONT_HDR  = mob and 11 or 12
+    local WW     = mob and math.min(360, vp.X - 10) or 340
+    local WH     = opts.Height or (mob and math.min(340, vp.Y - 60) or 290)
+    local TOP_H  = mob and 44 or 38
+    local SIDE_W = mob and 108 or 108
+    local TAB_H_BTN = mob and 38 or 32
+    local FONT_SM   = mob and 11 or 9
+    local FONT_MD   = mob and 12 or 10
+    local FONT_HDR  = mob and 14 or 12
 
     -- Clear old instance
     local par = safeP()
@@ -664,12 +669,12 @@ function Vula:CreateWindow(opts)
         ZIndex           = 5,
     })
     C(TB, 14)
-    -- Flatten bottom corners
+    -- Flush the bottom corners of the topbar against the sidebar/content
     ni("Frame", TB, {
-        Size             = UDim2.new(1, 0, 0.5, 0),
-        Position         = UDim2.new(0, 0, 0.5, 0),
+        Size             = UDim2.new(1, 0, 0, 14),
+        Position         = UDim2.new(0, 0, 1, -14),
         BackgroundColor3 = th.Top,
-        ZIndex           = 5,
+        ZIndex           = 4,
     })
     -- Accent line (top)
     ni("Frame", TB, {
@@ -1195,6 +1200,21 @@ function Vula:CreateWindow(opts)
                     local nc = remap[c3k(inst.ImageColor3)]
                     if nc then tw(inst, { ImageColor3 = nc }, D) end
                 end
+                if inst:IsA("UIGradient") then
+                    local kps = inst.ColorSequence.Keypoints
+                    local changed = false
+                    local newKps = {}
+                    for _, kp in ipairs(kps) do
+                        local nc = remap[c3k(kp.Value)]
+                        if nc then changed = true end
+                        newKps[#newKps + 1] = ColorSequenceKeypoint.new(kp.Time, nc or kp.Value)
+                    end
+                    if changed then
+                        pcall(function()
+                            inst.ColorSequence = ColorSequence.new(newKps)
+                        end)
+                    end
+                end
             end)
         end
         th = newTh
@@ -1282,16 +1302,18 @@ function Vula:CreateWindow(opts)
         C(aBg, 10)
 
         -- Icon
-        local textX = iconId and 30 or 10
+        local textX = iconId and (mob and 36 or 30) or 10
         if iconId then
+            local icoSz = mob and 18 or 14
             local ico = ni("ImageLabel", btn, {
                 Name             = "_ico",
-                Size             = UDim2.new(0, 14, 0, 14),
-                Position         = UDim2.new(0, 10, 0.5, 0),
+                Size             = UDim2.new(0, icoSz, 0, icoSz),
+                Position         = UDim2.new(0, mob and 12 or 10, 0.5, 0),
                 AnchorPoint      = Vector2.new(0, 0.5),
                 BackgroundTransparency = 1,
                 Image            = iconId,
                 ImageColor3      = first and th.Acc or th.TxtOff,
+                ScaleType        = Enum.ScaleType.Fit,
                 ZIndex           = 8,
             })
         end
@@ -1349,28 +1371,28 @@ function Vula:CreateWindow(opts)
         -- ── Section ─────────────────────────────────────────────────────────────
         function tab:CreateSection(label)
             local sf = ni("Frame", page, {
-                Size             = UDim2.new(1, 0, 0, 24),
+                Size             = UDim2.new(1, 0, 0, mob and 30 or 24),
                 BackgroundTransparency = 1,
                 ZIndex           = 4,
                 LayoutOrder      = eo(),
             })
             -- Dot
             local dot = ni("Frame", sf, {
-                Size             = UDim2.new(0, 4, 0, 4),
-                Position         = UDim2.new(0, 2, 0, 10),
+                Size             = UDim2.new(0, mob and 5 or 4, 0, mob and 5 or 4),
+                Position         = UDim2.new(0, 2, 0, mob and 13 or 10),
                 BackgroundColor3 = th.Acc,
                 ZIndex           = 5,
             })
-            C(dot, 2)
+            C(dot, 3)
             -- Label
             ni("TextLabel", sf, {
-                Size                = UDim2.new(1, -16, 0, 14),
-                Position            = UDim2.new(0, 11, 0, 3),
+                Size                = UDim2.new(1, -16, 0, mob and 18 or 14),
+                Position            = UDim2.new(0, 11, 0, mob and 5 or 3),
                 BackgroundTransparency = 1,
                 Text                = label:upper(),
                 TextColor3          = th.SecLbl,
                 Font                = Enum.Font.GothamBold,
-                TextSize            = 8,
+                TextSize            = mob and 10 or 8,
                 TextXAlignment      = Enum.TextXAlignment.Left,
                 ZIndex              = 5,
             })
@@ -1399,14 +1421,15 @@ function Vula:CreateWindow(opts)
             local fl    = opts2.Flag
             local cb    = opts2.Callback
             local val   = dVal
+            local ROW_H_T = mob and 44 or 36
 
             local row = ni("Frame", page, {
-                Size             = UDim2.new(1, 0, 0, 36),
+                Size             = UDim2.new(1, 0, 0, ROW_H_T),
                 BackgroundColor3 = th.Card,
                 ZIndex           = 5,
                 LayoutOrder      = eo(),
             })
-            C(row, 9)
+            C(row, 10)
             local rSt = St(row, th.Stroke, 1, 0.26)
 
             -- Left accent strip
@@ -1432,7 +1455,7 @@ function Vula:CreateWindow(opts)
 
             -- Name label
             local nameLbl = ni("TextLabel", row, {
-                Size                = UDim2.new(1, -66, 1, 0),
+                Size                = UDim2.new(1, -(PW + 28), 1, 0),
                 Position            = UDim2.new(0, 21, 0, 0),
                 BackgroundTransparency = 1,
                 Text                = tName,
@@ -1443,12 +1466,15 @@ function Vula:CreateWindow(opts)
                 ZIndex              = 6,
             })
 
-            -- Pill toggle
-            local PW, PH, KS = 38, 20, 14
-            local K0, K1 = 2, 20
+            -- Pill toggle — larger on mobile for finger targets
+            local PW  = mob and 48 or 38
+            local PH  = mob and 26 or 20
+            local KS  = mob and 20 or 14
+            local K0  = 3
+            local K1  = PW - KS - 3
             local pill = ni("Frame", row, {
                 Size             = UDim2.new(0, PW, 0, PH),
-                Position         = UDim2.new(1, -(PW + 8), 0.5, 0),
+                Position         = UDim2.new(1, -(PW + 10), 0.5, 0),
                 AnchorPoint      = Vector2.new(0, 0.5),
                 BackgroundColor3 = val and th.TOn or th.TOff,
                 ZIndex           = 6,
@@ -1547,7 +1573,7 @@ function Vula:CreateWindow(opts)
             local bName = opts2.Name        or "Button"
             local cb    = opts2.Callback
             local sub   = opts2.Description or ""
-            local ROW_H = sub ~= "" and 42 or 34
+            local ROW_H = sub ~= "" and (mob and 54 or 42) or (mob and 42 or 34)
 
             local row = ni("Frame", page, {
                 Size             = UDim2.new(1, 0, 0, ROW_H),
@@ -1556,7 +1582,7 @@ function Vula:CreateWindow(opts)
                 LayoutOrder      = eo(),
                 ClipsDescendants = true,
             })
-            C(row, 9)
+            C(row, 10)
             local rSt = St(row, th.Stroke, 1, 0.24)
 
             -- Hover fill
@@ -1570,8 +1596,8 @@ function Vula:CreateWindow(opts)
 
             -- Main label
             ni("TextLabel", row, {
-                Size                = UDim2.new(1, -28, 0, 18),
-                Position            = UDim2.new(0, 12, 0, sub ~= "" and 6 or 0),
+                Size                = UDim2.new(1, -28, 0, mob and 22 or 18),
+                Position            = UDim2.new(0, 12, 0, sub ~= "" and (mob and 8 or 6) or 0),
                 BackgroundTransparency = 1,
                 Text                = bName,
                 TextColor3          = th.Text,
@@ -1584,13 +1610,13 @@ function Vula:CreateWindow(opts)
             -- Description label
             if sub ~= "" then
                 ni("TextLabel", row, {
-                    Size                = UDim2.new(1, -28, 0, 14),
-                    Position            = UDim2.new(0, 12, 0, 24),
+                    Size                = UDim2.new(1, -28, 0, mob and 16 or 14),
+                    Position            = UDim2.new(0, 12, 0, mob and 30 or 24),
                     BackgroundTransparency = 1,
                     Text                = sub,
                     TextColor3          = th.Dim,
                     Font                = Enum.Font.GothamMedium,
-                    TextSize            = 8,
+                    TextSize            = mob and 10 or 8,
                     TextXAlignment      = Enum.TextXAlignment.Left,
                     ZIndex              = 6,
                 })
@@ -1667,12 +1693,12 @@ function Vula:CreateWindow(opts)
         -- ── Label ────────────────────────────────────────────────────────────────
         function tab:CreateLabel(text)
             local row = ni("Frame", page, {
-                Size             = UDim2.new(1, 0, 0, 26),
+                Size             = UDim2.new(1, 0, 0, mob and 32 or 26),
                 BackgroundColor3 = th.Card,
                 ZIndex           = 5,
                 LayoutOrder      = eo(),
             })
-            C(row, 9)
+            C(row, 10)
             St(row, th.Stroke, 1, 0.38)
             local lbl = ni("TextLabel", row, {
                 Size                = UDim2.new(1, -14, 1, 0),
@@ -1702,16 +1728,16 @@ function Vula:CreateWindow(opts)
             local listening = false
 
             local row = ni("Frame", page, {
-                Size             = UDim2.new(1, 0, 0, 34),
+                Size             = UDim2.new(1, 0, 0, mob and 42 or 34),
                 BackgroundColor3 = th.Card,
                 ZIndex           = 5,
                 LayoutOrder      = eo(),
             })
-            C(row, 9)
+            C(row, 10)
             St(row, th.Stroke, 1, 0.24)
 
             ni("TextLabel", row, {
-                Size                = UDim2.new(1, -82, 1, 0),
+                Size                = UDim2.new(1, mob and -100 or -82, 1, 0),
                 Position            = UDim2.new(0, 12, 0, 0),
                 BackgroundTransparency = 1,
                 Text                = kName,
@@ -1723,18 +1749,18 @@ function Vula:CreateWindow(opts)
             })
 
             local chip = ni("TextButton", row, {
-                Size             = UDim2.new(0, 66, 0, 20),
-                Position         = UDim2.new(1, -72, 0.5, 0),
+                Size             = UDim2.new(0, mob and 80 or 66, 0, mob and 26 or 20),
+                Position         = UDim2.new(1, mob and -88 or -72, 0.5, 0),
                 AnchorPoint      = Vector2.new(0, 0.5),
                 BackgroundColor3 = th.InBg,
                 Text             = cur,
                 TextColor3       = th.Acc,
                 Font             = Enum.Font.GothamBold,
-                TextSize         = 8,
+                TextSize         = mob and 10 or 8,
                 ZIndex           = 7,
                 AutoButtonColor  = false,
             })
-            C(chip, 6)
+            C(chip, 8)
             local cSt = St(chip, th.Acc, 1, 0.40)
 
             chip.MouseButton1Click:Connect(function()
@@ -1774,12 +1800,12 @@ function Vula:CreateWindow(opts)
             local sfx   = opts2.Suffix    or ""
 
             local row = ni("Frame", page, {
-                Size             = UDim2.new(1, 0, 0, 46),
+                Size             = UDim2.new(1, 0, 0, mob and 56 or 46),
                 BackgroundColor3 = th.Card,
                 ZIndex           = 5,
                 LayoutOrder      = eo(),
             })
-            C(row, 9)
+            C(row, 10)
             St(row, th.Stroke, 1, 0.24)
 
             ni("TextLabel", row, {
@@ -1814,13 +1840,13 @@ function Vula:CreateWindow(opts)
 
             local PAD = 10
             local trackBg = ni("Frame", row, {
-                Size             = UDim2.new(1, -PAD * 2, 0, 4),
-                Position         = UDim2.new(0, PAD, 1, -10),
+                Size             = UDim2.new(1, -PAD * 2, 0, mob and 6 or 4),
+                Position         = UDim2.new(0, PAD, 1, mob and -12 or -10),
                 AnchorPoint      = Vector2.new(0, 1),
                 BackgroundColor3 = th.SliderTrack or th.Div,
                 ZIndex           = 6,
             })
-            C(trackBg, 2)
+            C(trackBg, 3)
 
             local trackFill = ni("Frame", trackBg, {
                 Size             = UDim2.new(0, 0, 1, 0),
@@ -1859,7 +1885,7 @@ function Vula:CreateWindow(opts)
             end
 
             local hitArea = ni("TextButton", trackBg, {
-                Size             = UDim2.new(1, PAD * 2, 0, 30),
+                Size             = UDim2.new(1, PAD * 2, 0, mob and 44 or 30),
                 Position         = UDim2.new(0, -PAD, 0.5, 0),
                 AnchorPoint      = Vector2.new(0, 0.5),
                 BackgroundTransparency = 1,
@@ -1914,33 +1940,33 @@ function Vula:CreateWindow(opts)
             local numO  = opts2.NumbersOnly  or false
 
             local row = ni("Frame", page, {
-                Size             = UDim2.new(1, 0, 0, 54),
+                Size             = UDim2.new(1, 0, 0, mob and 66 or 54),
                 BackgroundColor3 = th.Card,
                 ZIndex           = 5,
                 LayoutOrder      = eo(),
             })
-            C(row, 9)
+            C(row, 10)
             St(row, th.Stroke, 1, 0.24)
 
             ni("TextLabel", row, {
-                Size                = UDim2.new(0.80, 0, 0, 14),
-                Position            = UDim2.new(0, 12, 0, 6),
+                Size                = UDim2.new(0.80, 0, 0, mob and 16 or 14),
+                Position            = UDim2.new(0, 12, 0, mob and 8 or 6),
                 BackgroundTransparency = 1,
                 Text                = iName,
                 TextColor3          = th.Dim,
                 Font                = Enum.Font.GothamBold,
-                TextSize            = 9,
+                TextSize            = mob and 11 or 9,
                 TextXAlignment      = Enum.TextXAlignment.Left,
                 ZIndex              = 6,
             })
 
             local inputBg = ni("Frame", row, {
-                Size             = UDim2.new(1, -16, 0, 24),
-                Position         = UDim2.new(0, 8, 0, 23),
+                Size             = UDim2.new(1, -16, 0, mob and 28 or 24),
+                Position         = UDim2.new(0, 8, 0, mob and 28 or 23),
                 BackgroundColor3 = th.InBg,
                 ZIndex           = 6,
             })
-            C(inputBg, 7)
+            C(inputBg, 8)
             local iSt = St(inputBg, th.Stroke, 1, 0.26)
 
             local tb = ni("TextBox", inputBg, {
@@ -1952,7 +1978,7 @@ function Vula:CreateWindow(opts)
                 TextColor3          = th.Text,
                 PlaceholderColor3   = th.Ph,
                 Font                = Enum.Font.GothamMedium,
-                TextSize            = 9,
+                TextSize            = mob and 11 or 9,
                 TextXAlignment      = Enum.TextXAlignment.Left,
                 ZIndex              = 7,
                 ClearTextOnFocus    = false,
@@ -1987,8 +2013,8 @@ function Vula:CreateWindow(opts)
             local multi  = opts2.Multi ~= false
             local fl     = opts2.Flag
             local cb     = opts2.Callback
-            local HDRH   = 34
-            local ITMH   = 28
+            local HDRH   = mob and 42 or 34
+            local ITMH   = mob and 36 or 28
             local selected = {}
             local isOpen   = false
             local totalH   = HDRH + (#opts3 * ITMH) + 8
@@ -2006,7 +2032,7 @@ function Vula:CreateWindow(opts)
                 BackgroundColor3 = th.Card,
                 ZIndex           = 5,
             })
-            C(hdr, 9)
+            C(hdr, 10)
             local hdrSt = St(hdr, th.Stroke, 1, 0.24)
 
             ni("TextLabel", hdr, {
@@ -2110,7 +2136,7 @@ function Vula:CreateWindow(opts)
                     Text                = name,
                     TextColor3          = th.Dim,
                     Font                = Enum.Font.GothamMedium,
-                    TextSize            = 9,
+                    TextSize            = mob and 11 or 9,
                     TextXAlignment      = Enum.TextXAlignment.Left,
                     ZIndex              = 7,
                 })
