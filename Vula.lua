@@ -174,7 +174,7 @@ Vula.Theme = {
 
 -- ── Notify ─────────────────────────────────────────────────────────────────────
 local _nsg, _nst = nil, {}
-local NW, NH, NG = 270, 60, 5
+local NW, NH, NG = 230, 48, 4
 local NOTIFY_ICON  = { info="ℹ", success="✓", warn="⚠", error="✕" }
 local NOTIFY_COL   = { info="NInfo", success="NSucc", warn="NWarn", error="NErr" }
 
@@ -218,23 +218,20 @@ function Vula:Notify(o)
 
     -- Top accent glow
     local gt = ni("Frame", f, { Size=UDim2.new(1,0,0,1), BackgroundColor3=nCol, BackgroundTransparency=.06, ZIndex=12 }); C(gt,10)
-    -- Left bar
-    local lb = ni("Frame", f, { Size=UDim2.new(0,3,.55,0), Position=UDim2.new(0,8,.225,0), BackgroundColor3=nCol, ZIndex=12 }); C(lb,2)
-    -- Icon circle
-    local ic = ni("Frame", f, { Size=UDim2.new(0,22,0,22), Position=UDim2.new(0,16,.5,0), AnchorPoint=Vector2.new(0,.5), BackgroundColor3=nCol, BackgroundTransparency=.78, ZIndex=12 }); C(ic,11)
-    ni("TextLabel", ic, { Size=UDim2.new(1,0,1,0), BackgroundTransparency=1, Text=NOTIFY_ICON[typ] or "ℹ",
-                           TextColor3=nCol, Font=Enum.Font.GothamBold, TextSize=10, ZIndex=13 })
-    -- Text
-    local tl = ni("TextLabel", f, { Size=UDim2.new(1,-52,0,18), Position=UDim2.new(0,44,0,8),
+    local lb = ni("Frame", f, { Size=UDim2.new(0,3,.5,0), Position=UDim2.new(0,8,.25,0), BackgroundColor3=nCol, ZIndex=12 }); C(lb,2)
+    local ic = ni("Frame", f, { Size=UDim2.new(0,18,0,18), Position=UDim2.new(0,14,.5,0), AnchorPoint=Vector2.new(0,.5), BackgroundColor3=nCol, BackgroundTransparency=.8, ZIndex=12 }); C(ic,9)
+    ni("TextLabel", ic, { Size=UDim2.new(1,0,1,0), BackgroundTransparency=1, Text=NOTIFY_ICON[typ] or "i",
+                           TextColor3=nCol, Font=Enum.Font.GothamBold, TextSize=9, ZIndex=13 })
+    local tl = ni("TextLabel", f, { Size=UDim2.new(1,-46,0,15), Position=UDim2.new(0,38,0,6),
         BackgroundTransparency=1, Text=T, TextColor3=th.Text,
-        Font=Enum.Font.GothamBold, TextSize=11, TextXAlignment=Enum.TextXAlignment.Left,
+        Font=Enum.Font.GothamBold, TextSize=10, TextXAlignment=Enum.TextXAlignment.Left,
         TextTransparency=1, ZIndex=12 })
-    local bl = ni("TextLabel", f, { Size=UDim2.new(1,-52,0,15), Position=UDim2.new(0,44,0,28),
+    local bl = ni("TextLabel", f, { Size=UDim2.new(1,-46,0,13), Position=UDim2.new(0,38,0,23),
         BackgroundTransparency=1, Text=C2, TextColor3=th.Dim,
-        Font=Enum.Font.GothamMedium, TextSize=10, TextXAlignment=Enum.TextXAlignment.Left,
+        Font=Enum.Font.GothamMedium, TextSize=9, TextXAlignment=Enum.TextXAlignment.Left,
         TextTruncate=Enum.TextTruncate.AtEnd, TextTransparency=1, ZIndex=12 })
     -- Timer bar
-    local bg = ni("Frame", f, { Size=UDim2.new(1,-16,0,1), Position=UDim2.new(0,8,1,-3), AnchorPoint=Vector2.new(0,1), BackgroundColor3=th.Div, ZIndex=12 }); C(bg,1)
+    local bg = ni("Frame", f, { Size=UDim2.new(1,-16,0,1), Position=UDim2.new(0,8,1,-2), AnchorPoint=Vector2.new(0,1), BackgroundColor3=th.Div, ZIndex=12 }); C(bg,1)
     local bf = ni("Frame", bg, { Size=UDim2.new(1,0,1,0), BackgroundColor3=nCol, ZIndex=13 }); C(bf,1)
 
     _nst[idx] = f
@@ -450,8 +447,8 @@ function Vula:CreateWindow(opts)
     -- ── Pill ──────────────────────────────────────────────────────────────────
     local Pill = ni("Frame",sg,{
         Size=UDim2.new(0,PILL_W,0,PILL_H),
-        Position=UDim2.new(.5,0,1,-20),
-        AnchorPoint=Vector2.new(.5,1),
+        Position=UDim2.new(1,-8,.5,0),
+        AnchorPoint=Vector2.new(1,.5),
         BackgroundColor3=th.Pill, ZIndex=55,
     }); C(Pill, PILL_H//2)
     St(Pill, th.Acc, 1, .1)
@@ -466,17 +463,17 @@ function Vula:CreateWindow(opts)
     local pillDot = ni("Frame",Pill,{Size=UDim2.new(0,6,0,6),Position=UDim2.new(0,10,.5,0),AnchorPoint=Vector2.new(0,.5),BackgroundColor3=th.Acc,BackgroundTransparency=1,ZIndex=57}); C(pillDot,3)
     local pillLbl = ni("TextLabel",Pill,{Size=UDim2.new(1,-6,1,0),Position=UDim2.new(0,3,0,0),BackgroundTransparency=1,Text="▲  "..title,TextColor3=th.Text,Font=Enum.Font.GothamBold,TextSize=9,ZIndex=56})
 
-    -- Pill drag
+    -- Pill drag (Y axis, right side)
     do
-        local dr,dsx,sx=false,0,0; local dc
+        local dr,dsy,sy=false,0,0; local dc
         Pill.InputBegan:Connect(function(i,gpe)
             if gpe then return end
             if i.UserInputType~=Enum.UserInputType.MouseButton1 and i.UserInputType~=Enum.UserInputType.Touch then return end
-            dr=true; dsx=UIS:GetMouseLocation().X; sx=Pill.Position.X.Offset
+            dr=true; dsy=UIS:GetMouseLocation().Y; sy=Pill.Position.Y.Offset
             if dc then dc:Disconnect() end
             dc = Run.Heartbeat:Connect(function()
                 if not dr then dc:Disconnect(); return end
-                Pill.Position = UDim2.new(.5, sx+(UIS:GetMouseLocation().X-dsx), 1, -20)
+                Pill.Position = UDim2.new(1,-8, .5, sy+(UIS:GetMouseLocation().Y-dsy))
             end)
         end)
         UIS.InputEnded:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then dr=false end end)
@@ -484,16 +481,43 @@ function Vula:CreateWindow(opts)
 
     -- ── Open / Close / Minimize ───────────────────────────────────────────────
     local Hidden, Minimised, Deb = false, false, false
+    local OPEN_POS  = UDim2.new(.5, 3, .5, -38)
+    local CLOSE_POS = UDim2.new(.5, 3, .5, -38-18)   -- slides up slightly
+
     local function open()
         if Deb then return end; Deb=true; Hidden=false
-        shadow.Visible=true; Main.Visible=true; Main.BackgroundTransparency=1
-        tw(Main,{BackgroundTransparency=0},.3); pillLbl.Text="▲  "..title
-        task.delay(.32,function() Deb=false end)
+        shadow.Visible=true; Main.Visible=true
+        Main.BackgroundTransparency=1
+        Main.Position = UDim2.new(.5, 3, .5, -38+14)  -- start below
+        Main.Size     = UDim2.new(0,WW,0,WH)
+        for _,d in ipairs(Main:GetDescendants()) do
+            if d:IsA("TextLabel") or d:IsA("TextButton") then
+                pcall(function() if d.TextTransparency < 1 then d.TextTransparency=1 end end)
+            end
+        end
+        pillLbl.Text="▲  "..title
+        tw(Main, {BackgroundTransparency=0, Position=OPEN_POS}, .36, Enum.EasingStyle.Back)
+        task.delay(.18, function()
+            for _,d in ipairs(Main:GetDescendants()) do
+                if d:IsA("TextLabel") or d:IsA("TextButton") then
+                    pcall(function()
+                        if d ~= pillLbl then tw(d,{TextTransparency=0},.2) end
+                    end)
+                end
+            end
+        end)
+        task.delay(.4, function() Deb=false end)
     end
     local function close(silent)
         if Deb then return end; Deb=true; Hidden=true
-        tw(Main,{BackgroundTransparency=1},.24); pillLbl.Text="▼  "..title
-        task.delay(.26,function() Main.Visible=false; shadow.Visible=false; Deb=false end)
+        pillLbl.Text="▼  "..title
+        tw(Main, {BackgroundTransparency=1, Position=CLOSE_POS, Size=UDim2.new(0,WW,0,WH-8)},
+            .22, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+        task.delay(.24, function()
+            Main.Visible=false; shadow.Visible=false
+            Main.Position=OPEN_POS; Main.Size=UDim2.new(0,WW,0,WH)
+            Deb=false
+        end)
         if not silent then Vula:Notify({Title="Hidden",Content="Pill or RightShift to reopen.",Duration=3,Type="info"}) end
     end
     local function toggle() if Hidden then open() else close(true) end end
@@ -548,9 +572,40 @@ function Vula:CreateWindow(opts)
 
     function Win:SetTheme(name)
         local newTh = rt(Vula.Theme[name] or Vula.Theme.Default)
-        Vula._theme = newTh
-        th = newTh
-        Vula:Notify({Title="Theme", Content=name.." applied — restart GUI for full effect.", Duration=4, Type="info"})
+
+        -- Build RGB-string keyed remap: old color → new color
+        local function c3k(c)
+            return math.floor(c.R*255+.5)..","..math.floor(c.G*255+.5)..","..math.floor(c.B*255+.5)
+        end
+        local remap = {}
+        for k in pairs(Vula.Theme.Default) do   -- iterate common keys
+            local ov = th[k]; local nv = newTh[k]
+            if type(ov)=="userdata" and type(nv)=="userdata" then
+                remap[c3k(ov)] = nv
+            end
+        end
+
+        th = newTh; Vula._theme = newTh
+
+        local D = .28
+        for _, inst in ipairs(sg:GetDescendants()) do
+            pcall(function()
+                if inst:IsA("Frame") or inst:IsA("TextButton") or inst:IsA("ScrollingFrame") or inst:IsA("ImageLabel") then
+                    local nc = remap[c3k(inst.BackgroundColor3)]
+                    if nc then tw(inst,{BackgroundColor3=nc},D) end
+                end
+                if inst:IsA("TextLabel") or inst:IsA("TextButton") then
+                    local nc = remap[c3k(inst.TextColor3)]
+                    if nc then tw(inst,{TextColor3=nc},D) end
+                end
+                if inst:IsA("UIStroke") then
+                    local nc = remap[c3k(inst.Color)]
+                    if nc then tw(inst,{Color=nc},D) end
+                end
+            end)
+        end
+
+        Vula:Notify({Title="Theme",Content=name.." applied.",Duration=2.5,Type="success"})
     end
 
     function Win:SetPillActive(active)
@@ -831,13 +886,14 @@ function Vula:CreateWindow(opts)
                 if i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch then
                     local abs=trackBg.AbsolutePosition; local sz=trackBg.AbsoluteSize
                     local relX=clamp((UIS:GetMouseLocation().X-abs.X)/sz.X,0,1)
-                    setVal(sMin+relX*(sMax-sMin), true)
+                    setVal(sMin+relX*(sMax-sMin), false)  -- visual only while dragging
                 end
             end)
             UIS.InputEnded:Connect(function(i)
                 if (i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch) and dragging then
                     dragging=false
                     tw(thumb,{Size=UDim2.new(0,KS2,0,KS2)},.2,Enum.EasingStyle.Back)
+                    setVal(val, true)  -- fire callback once on release
                 end
             end)
 
