@@ -84,91 +84,158 @@ local function clamp(v, mn, mx) return math.max(mn, math.min(mx, v)) end
 local function round(v, inc) return math.floor(v / inc + .5) * inc end
 
 -- ── Themes ────────────────────────────────────────────────────────────────────
+-- Keys: Bg Top Side Card CardH Stroke Text Dim SecLbl
+--       Acc AccD TOn TOff Knob TBOn TBOff TxtOn TxtOff
+--       Div InBg Ph Pill NBg NInfo NSucc NWarn NErr
+--       SliderTrack SliderFill
+local function mkTheme(t) return t end
 Vula.Theme = {
-    JJK = {
-        Bg="060610", Top="0a0a18", Side="080814",
-        Card="0d0c1a", CardH="14112200", Stroke="2c1828",
-        Text="dce0f8", Dim="48506e", SecLbl="c01a2e",
-        Acc="c81c30", AccD="7a0c1c", AccG="c81c30",
-        TOn="c81c30", TOff="1a0e16", Knob="f5f5ff",
-        TBOn="c81c30", TBOff="0c0c1c", TxtOn="ffffff", TxtOff="3e4560",
-        Div="22121c", InBg="09090f", Ph="383e58",
-        Pill="0c0b18", NBg="090916",
-        -- typed notify accent overrides
-        NInfo="3d8fdc", NSucc="22c55e", NWarn="f59e0b", NErr="ef4444",
-        SliderTrack="1a0e1e", SliderFill="c81c30",
+    -- ── Dark collection ───────────────────────────────────────────────────────
+    JJK = mkTheme {
+        Bg="060610", Top="0c0b1a", Side="09091a",
+        Card="0f0e1e", CardH="16132a", Stroke="2c1828",
+        Text="dce0f8", Dim="4a526e", SecLbl="c01a2e",
+        Acc="c81c30", AccD="7a0c1c",
+        TOn="c81c30", TOff="1c0e18", Knob="f5f5ff",
+        TBOn="c81c30", TBOff="0d0c1c", TxtOn="ffffff", TxtOff="3a4262",
+        Div="241420", InBg="08080e", Ph="38405a",
+        Pill="0c0b1a", NBg="09091a",
+        NInfo="4a90d9", NSucc="22c55e", NWarn="f59e0b", NErr="ef4444",
+        SliderTrack="1c0e1c", SliderFill="c81c30",
     },
-    Default = {
-        Bg="111111", Top="181818", Side="141414",
-        Card="1a1a1a", CardH="222222", Stroke="2a2a2a",
-        Text="e8e8e8", Dim="686868", SecLbl="3d8fdc",
-        Acc="3d8fdc", AccD="1f5a9a", AccG="3d8fdc",
-        TOn="3d8fdc", TOff="282828", Knob="f8f8f8",
-        TBOn="3d8fdc", TBOff="1a1a1a", TxtOn="ffffff", TxtOff="585858",
-        Div="252525", InBg="101010", Ph="484848",
-        Pill="181818", NBg="161616",
-        NInfo="3d8fdc", NSucc="22c55e", NWarn="f59e0b", NErr="ef4444",
-        SliderTrack="252525", SliderFill="3d8fdc",
+    Default = mkTheme {
+        Bg="101010", Top="181818", Side="141414",
+        Card="1c1c1c", CardH="242424", Stroke="2c2c2c",
+        Text="e8e8e8", Dim="666666", SecLbl="4a90d9",
+        Acc="4a90d9", AccD="2260a8",
+        TOn="4a90d9", TOff="282828", Knob="f8f8f8",
+        TBOn="4a90d9", TBOff="1c1c1c", TxtOn="ffffff", TxtOff="565656",
+        Div="282828", InBg="121212", Ph="484848",
+        Pill="1a1a1a", NBg="181818",
+        NInfo="4a90d9", NSucc="22c55e", NWarn="f59e0b", NErr="ef4444",
+        SliderTrack="242424", SliderFill="4a90d9",
     },
-    Midnight = {
-        Bg="060810", Top="0a0d1e", Side="080b18",
-        Card="0e1228", CardH="141830", Stroke="1e2650",
-        Text="ccd2ff", Dim="424e88", SecLbl="6080ff",
-        Acc="6080ff", AccD="3248c0", AccG="6080ff",
-        TOn="6080ff", TOff="141828", Knob="f0f0ff",
-        TBOn="6080ff", TBOff="0e1228", TxtOn="ffffff", TxtOff="3a4470",
-        Div="1a2048", InBg="080a16", Ph="363e70",
-        Pill="0a0d1e", NBg="0a0d1e",
-        NInfo="6080ff", NSucc="22c55e", NWarn="f59e0b", NErr="ef4444",
-        SliderTrack="1a2048", SliderFill="6080ff",
+    Midnight = mkTheme {
+        Bg="05060e", Top="090b1c", Side="07091a",
+        Card="0c1026", CardH="121630", Stroke="1c2450",
+        Text="c8d0ff", Dim="3e4a88", SecLbl="5c7aff",
+        Acc="5c7aff", AccD="2c48d0",
+        TOn="5c7aff", TOff="121828", Knob="eef0ff",
+        TBOn="5c7aff", TBOff="0c1026", TxtOn="ffffff", TxtOff="384270",
+        Div="182050", InBg="080a18", Ph="343c72",
+        Pill="090b1c", NBg="090b1c",
+        NInfo="5c7aff", NSucc="22c55e", NWarn="f59e0b", NErr="ef4444",
+        SliderTrack="182050", SliderFill="5c7aff",
     },
-    Amethyst = {
-        Bg="090610", Top="110c20", Side="0d0818",
-        Card="150f24", CardH="1c142c", Stroke="3c2258",
-        Text="e0d8ff", Dim="5e4890", SecLbl="a060e8",
-        Acc="a060e8", AccD="5c28a0", AccG="a060e8",
-        TOn="a060e8", TOff="241438", Knob="f0e8ff",
-        TBOn="a060e8", TBOff="150f24", TxtOn="ffffff", TxtOff="5a3e80",
-        Div="301a4e", InBg="0b0816", Ph="4e3470",
-        Pill="110c20", NBg="110c20",
-        NInfo="a060e8", NSucc="22c55e", NWarn="f59e0b", NErr="ef4444",
-        SliderTrack="301a4e", SliderFill="a060e8",
+    Amethyst = mkTheme {
+        Bg="080510", Top="100c20", Side="0c0818",
+        Card="140e24", CardH="1a122c", Stroke="3a2058",
+        Text="dcd4ff", Dim="5a4490", SecLbl="9a58e8",
+        Acc="9a58e8", AccD="5820a0",
+        TOn="9a58e8", TOff="221438", Knob="ede8ff",
+        TBOn="9a58e8", TBOff="140e24", TxtOn="ffffff", TxtOff="583c80",
+        Div="2e1a4e", InBg="0a0818", Ph="4c3270",
+        Pill="100c20", NBg="100c20",
+        NInfo="9a58e8", NSucc="22c55e", NWarn="f59e0b", NErr="ef4444",
+        SliderTrack="2e1a4e", SliderFill="9a58e8",
     },
-    Ocean = {
-        Bg="060e12", Top="0a1820", Side="08141c",
-        Card="0c1c26", CardH="12222e", Stroke="183a50",
-        Text="c8f0f2", Dim="3c7888", SecLbl="00c0c0",
-        Acc="00c0c0", AccD="007878", AccG="00c0c0",
-        TOn="00c0c0", TOff="0c2830", Knob="e8feff",
-        TBOn="00c0c0", TBOff="0c1c26", TxtOn="ffffff", TxtOff="2e6878",
-        Div="143650", InBg="080e14", Ph="2a5e6e",
-        Pill="0a1820", NBg="0a1820",
-        NInfo="00c0c0", NSucc="22c55e", NWarn="f59e0b", NErr="ef4444",
-        SliderTrack="143650", SliderFill="00c0c0",
+    Ocean = mkTheme {
+        Bg="040e12", Top="081820", Side="07141c",
+        Card="0a1c28", CardH="10222e", Stroke="164050",
+        Text="b8f0f2", Dim="387888", SecLbl="00b8c0",
+        Acc="00b8c0", AccD="007080",
+        TOn="00b8c0", TOff="0a2830", Knob="e0feff",
+        TBOn="00b8c0", TBOff="0a1c28", TxtOn="ffffff", TxtOff="2c6880",
+        Div="123650", InBg="060e14", Ph="285e6e",
+        Pill="081820", NBg="081820",
+        NInfo="00b8c0", NSucc="22c55e", NWarn="f59e0b", NErr="ef4444",
+        SliderTrack="123650", SliderFill="00b8c0",
     },
-    Sakura = {
-        Bg="0e0810", Top="1c1018", Side="160c14",
-        Card="201420", CardH="281a28", Stroke="4e2040",
-        Text="ffe8f2", Dim="7a5068", SecLbl="f05090",
-        Acc="f05090", AccD="902858", AccG="f05090",
-        TOn="f05090", TOff="301420", Knob="fff0f5",
-        TBOn="f05090", TBOff="201420", TxtOn="ffffff", TxtOff="6e3858",
-        Div="481838", InBg="0e080e", Ph="5e2e4e",
-        Pill="1c1018", NBg="1c1018",
-        NInfo="f05090", NSucc="22c55e", NWarn="f59e0b", NErr="ef4444",
-        SliderTrack="481838", SliderFill="f05090",
+    Sakura = mkTheme {
+        Bg="0c0810", Top="1a1018", Side="140c14",
+        Card="1e1420", CardH="261a28", Stroke="4c2040",
+        Text="ffd8f0", Dim="784e68", SecLbl="e84890",
+        Acc="e84890", AccD="882858",
+        TOn="e84890", TOff="2e1422", Knob="fff0f5",
+        TBOn="e84890", TBOff="1e1420", TxtOn="ffffff", TxtOff="6c385a",
+        Div="461838", InBg="0c080e", Ph="5c2e4e",
+        Pill="1a1018", NBg="1a1018",
+        NInfo="e84890", NSucc="22c55e", NWarn="f59e0b", NErr="ef4444",
+        SliderTrack="461838", SliderFill="e84890",
     },
-    Light = {
-        Bg="f0f0f4", Top="e4e4ea", Side="eaeaee",
-        Card="fafafa", CardH="f0f0f8", Stroke="d8d8de",
-        Text="181820", Dim="8a8a98", SecLbl="2878d8",
-        Acc="2878d8", AccD="185098", AccG="2878d8",
-        TOn="2878d8", TOff="c8c8d0", Knob="ffffff",
-        TBOn="2878d8", TBOff="fafafa", TxtOn="ffffff", TxtOff="8a8a98",
-        Div="d4d4dc", InBg="ebebee", Ph="a8a8b4",
-        Pill="e4e4ea", NBg="fafafa",
-        NInfo="2878d8", NSucc="22c55e", NWarn="f59e0b", NErr="ef4444",
-        SliderTrack="d4d4dc", SliderFill="2878d8",
+    -- ── New dark themes ───────────────────────────────────────────────────────
+    Neon = mkTheme {
+        Bg="030303", Top="060606", Side="050505",
+        Card="0a0a0a", CardH="101010", Stroke="1a3a1a",
+        Text="ccffcc", Dim="3a7a3a", SecLbl="00ff88",
+        Acc="00ff88", AccD="009950",
+        TOn="00ff88", TOff="0a1a10", Knob="e0ffe8",
+        TBOn="00ff88", TBOff="0a0a0a", TxtOn="000000", TxtOff="2a5a2a",
+        Div="0a2a0a", InBg="060606", Ph="1a4a1a",
+        Pill="060606", NBg="060606",
+        NInfo="00ccff", NSucc="00ff88", NWarn="ffcc00", NErr="ff3344",
+        SliderTrack="0a1a0a", SliderFill="00ff88",
+    },
+    Sunset = mkTheme {
+        Bg="0c0608", Top="180c10", Side="140a0c",
+        Card="1c1010", CardH="241414", Stroke="4a2020",
+        Text="ffd8c0", Dim="7a5040", SecLbl="ff7040",
+        Acc="ff6030", AccD="c03010",
+        TOn="ff6030", TOff="2a1010", Knob="fff0e8",
+        TBOn="ff6030", TBOff="1c1010", TxtOn="ffffff", TxtOff="6a3828",
+        Div="3a1c14", InBg="0e0a08", Ph="5a3020",
+        Pill="180c10", NBg="180c10",
+        NInfo="ff9050", NSucc="50d080", NWarn="ffcc30", NErr="ff3344",
+        SliderTrack="3a1c14", SliderFill="ff6030",
+    },
+    Carbon = mkTheme {
+        Bg="0e0e0e", Top="181818", Side="141414",
+        Card="1e1e1e", CardH="262626", Stroke="303030",
+        Text="e0e0e0", Dim="606060", SecLbl="909090",
+        Acc="e0e0e0", AccD="909090",
+        TOn="e0e0e0", TOff="282828", Knob="ffffff",
+        TBOn="e0e0e0", TBOff="1e1e1e", TxtOn="000000", TxtOff="505050",
+        Div="2c2c2c", InBg="121212", Ph="484848",
+        Pill="1a1a1a", NBg="181818",
+        NInfo="8888ff", NSucc="22c55e", NWarn="f59e0b", NErr="ef4444",
+        SliderTrack="282828", SliderFill="e0e0e0",
+    },
+    Rose = mkTheme {
+        Bg="0e0a0c", Top="1c1218", Side="181014",
+        Card="221618", CardH="2a1c20", Stroke="4a2838",
+        Text="fce8ee", Dim="8a5868", SecLbl="e87890",
+        Acc="e06080", AccD="a03050",
+        TOn="e06080", TOff="2a1420", Knob="fff0f4",
+        TBOn="e06080", TBOff="221618", TxtOn="ffffff", TxtOff="7a4860",
+        Div="3a2030", InBg="0e0a0c", Ph="6a4050",
+        Pill="1c1218", NBg="1c1218",
+        NInfo="d070b0", NSucc="50c080", NWarn="f59e0b", NErr="ef4444",
+        SliderTrack="3a2030", SliderFill="e06080",
+    },
+    Forest = mkTheme {
+        Bg="060e08", Top="0c1a0e", Side="0a160c",
+        Card="101e12", CardH="162818", Stroke="1c4020",
+        Text="c8f0cc", Dim="3a7040", SecLbl="50c060",
+        Acc="50c060", AccD="288038",
+        TOn="50c060", TOff="0e2010", Knob="e8ffea",
+        TBOn="50c060", TBOff="101e12", TxtOn="ffffff", TxtOff="326040",
+        Div="143a18", InBg="080e08", Ph="285830",
+        Pill="0c1a0e", NBg="0c1a0e",
+        NInfo="50b8c0", NSucc="50c060", NWarn="c8aa30", NErr="ef4444",
+        SliderTrack="143a18", SliderFill="50c060",
+    },
+    -- ── Light theme ───────────────────────────────────────────────────────────
+    Light = mkTheme {
+        Bg="f2f2f6", Top="e8e8ee", Side="ebebf0",
+        Card="fafafa", CardH="f0f0f8", Stroke="d4d4dc",
+        Text="18181e", Dim="8a8a98", SecLbl="2870d8",
+        Acc="2870d8", AccD="184fa0",
+        TOn="2870d8", TOff="c8c8d4", Knob="ffffff",
+        TBOn="2870d8", TBOff="fafafa", TxtOn="ffffff", TxtOff="8a8a98",
+        Div="d0d0d8", InBg="ebebee", Ph="a0a0b0",
+        Pill="e8e8ee", NBg="fafafa",
+        NInfo="2870d8", NSucc="18a050", NWarn="d08010", NErr="d83020",
+        SliderTrack="d0d0d8", SliderFill="2870d8",
     },
 }
 
@@ -549,14 +616,25 @@ function Vula:CreateWindow(opts)
             local b = _btns[i]; if not b then continue end
             local lbl = b:FindFirstChildWhichIsA("TextLabel")
             local bar = b:FindFirstChild("_b")
+            local ico = b:FindFirstChild("_ico")
+            local abg = b:FindFirstChildWhichIsA("Frame")
+            -- find the activeBg (2nd frame child, not the bar)
+            local aBg2 = nil
+            for _,ch in ipairs(b:GetChildren()) do
+                if ch:IsA("Frame") and ch.Name ~= "_b" then aBg2=ch; break end
+            end
             if i == idx then
-                tw(b,  {BackgroundColor3=th.TBOn,  BackgroundTransparency=0},   .22)
-                if lbl then tw(lbl,{TextColor3=th.TxtOn,  TextTransparency=0},.18) end
-                if bar then tw(bar,{BackgroundTransparency=0},.18) end
+                tw(b,   {BackgroundColor3=th.TBOn, BackgroundTransparency=0},  .2)
+                tw(aBg2 or abg, {BackgroundTransparency=.88}, .2)
+                if lbl then tw(lbl,{TextColor3=th.TxtOn,  TextTransparency=0}, .16) end
+                if bar then tw(bar,{BackgroundTransparency=0,BackgroundColor3=th.Acc},.16) end
+                if ico then tw(ico,{ImageColor3=th.Acc},.16) end
             else
-                tw(b,  {BackgroundColor3=th.TBOff, BackgroundTransparency=.6}, .22)
-                if lbl then tw(lbl,{TextColor3=th.TxtOff, TextTransparency=.2},.18) end
-                if bar then tw(bar,{BackgroundTransparency=1},.18) end
+                tw(b,   {BackgroundColor3=th.TBOff, BackgroundTransparency=.7}, .2)
+                tw(aBg2 or abg, {BackgroundTransparency=1}, .2)
+                if lbl then tw(lbl,{TextColor3=th.TxtOff, TextTransparency=.25},.16) end
+                if bar then tw(bar,{BackgroundTransparency=1},.16) end
+                if ico then tw(ico,{ImageColor3=th.TxtOff},.16) end
             end
         end
         _act = idx
@@ -627,20 +705,75 @@ function Vula:CreateWindow(opts)
         end
     end
 
+    -- Icon asset IDs (white, square, recolorable via ImageColor3)
+    local TAB_ICONS = {
+        -- rbxassetid://  white icon images
+        sword    = "rbxassetid://7743874695",
+        shield   = "rbxassetid://7734053495",
+        star     = "rbxassetid://7734053502",
+        bolt     = "rbxassetid://7734053474",
+        refresh  = "rbxassetid://7734053484",
+        gift     = "rbxassetid://7734053477",
+        settings = "rbxassetid://7734053488",
+        skull    = "rbxassetid://7734053491",
+        dice     = "rbxassetid://7734053494",
+        flag     = "rbxassetid://7734053497",
+        fire     = "rbxassetid://7734053462",
+        heart    = "rbxassetid://7734053465",
+        lock     = "rbxassetid://7734053468",
+        trophy   = "rbxassetid://7734053471",
+        map      = "rbxassetid://7734053500",
+        info     = "rbxassetid://7734053503",
+    }
+
     function Win:CreateTab(name, icon)
         local idx   = #_tabs + 1
         local first = (idx == 1)
-        local displayName = icon and (icon.."  "..name) or name
+
+        -- icon: either a key from TAB_ICONS table, or a raw rbxassetid:// string
+        local iconId = nil
+        if icon then
+            iconId = TAB_ICONS[icon] or (icon:find("rbxassetid") and icon) or nil
+        end
 
         local btn = ni("TextButton",tabSF,{
-            Name="T_"..name, Size=UDim2.new(1,0,0,30),
+            Name="T_"..name, Size=UDim2.new(1,0,0,32),
             BackgroundColor3=first and th.TBOn or th.TBOff,
-            BackgroundTransparency=first and 0 or .6,
+            BackgroundTransparency=first and 0 or .7,
             Text="", ZIndex=6, AutoButtonColor=false, LayoutOrder=idx,
-        }); C(btn,7)
+        }); C(btn,8)
 
-        local bar = ni("Frame",btn,{Name="_b",Size=UDim2.new(0,2,.55,0),Position=UDim2.new(0,0,.225,0),BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=first and 0 or 1,ZIndex=7}); C(bar,1)
-        ni("TextLabel",btn,{Size=UDim2.new(1,-12,1,0),Position=UDim2.new(0,10,0,0),BackgroundTransparency=1,Text=displayName,TextColor3=first and th.TxtOn or th.TxtOff,Font=Enum.Font.GothamBold,TextSize=9,TextXAlignment=Enum.TextXAlignment.Left,TextTransparency=first and 0 or .2,ZIndex=7})
+        -- Active indicator bar (left edge)
+        local bar = ni("Frame",btn,{Name="_b",Size=UDim2.new(0,3,.5,0),Position=UDim2.new(0,0,.25,0),BackgroundColor3=th.TxtOn,BackgroundTransparency=first and 0 or 1,ZIndex=7}); C(bar,2)
+
+        -- Active bg highlight strip
+        local activeBg = ni("Frame",btn,{Size=UDim2.new(1,0,1,0),BackgroundColor3=th.Acc,BackgroundTransparency=first and .88 or 1,ZIndex=6}); C(activeBg,8)
+
+        local textX = iconId and 32 or 10
+        local textW = iconId and -40 or -16
+
+        -- Icon ImageLabel
+        if iconId then
+            local ico = ni("ImageLabel",btn,{
+                Size=UDim2.new(0,14,0,14),
+                Position=UDim2.new(0,10,.5,0),
+                AnchorPoint=Vector2.new(0,.5),
+                BackgroundTransparency=1,
+                Image=iconId,
+                ImageColor3=first and th.TxtOn or th.TxtOff,
+                ZIndex=8,
+            })
+            ico.Name = "_ico"
+        end
+
+        local lbl = ni("TextLabel",btn,{
+            Size=UDim2.new(1,textW,1,0),Position=UDim2.new(0,textX,0,0),
+            BackgroundTransparency=1,Text=name,
+            TextColor3=first and th.TxtOn or th.TxtOff,
+            Font=Enum.Font.GothamBold,TextSize=9,
+            TextXAlignment=Enum.TextXAlignment.Left,
+            TextTransparency=first and 0 or .25,ZIndex=7,
+        })
 
         btn.MouseButton1Click:Connect(function() selTab(idx) end)
         btn.MouseEnter:Connect(function() if _act~=idx then tw(btn,{BackgroundTransparency=.25},.14) end end)
@@ -658,33 +791,27 @@ function Vula:CreateWindow(opts)
         if first then _act=1 end
         local function eo() tab._n=tab._n+1; return tab._n end
 
-        -- ── Section (collapsible) ─────────────────────────────────────────────
+        -- ── Section ──────────────────────────────────────────────────────────
         function tab:CreateSection(s)
-            local sf     = ni("Frame",page,{Size=UDim2.new(1,0,0,20),BackgroundTransparency=1,ZIndex=4,LayoutOrder=eo(),ClipsDescendants=false})
-            local opened = true
-            local children = {}   -- collected after creation
-
-            local hdr = ni("TextButton",sf,{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text="",ZIndex=5,AutoButtonColor=false})
-            ni("TextLabel",sf,{Size=UDim2.new(1,-20,0,13),Position=UDim2.new(0,1,0,4),BackgroundTransparency=1,Text=s:upper(),TextColor3=th.SecLbl,Font=Enum.Font.GothamBold,TextSize=8,TextXAlignment=Enum.TextXAlignment.Left,ZIndex=5})
-            local chev = ni("TextLabel",sf,{Size=UDim2.new(0,14,0,13),Position=UDim2.new(1,-14,0,4),BackgroundTransparency=1,Text="v",TextColor3=th.SecLbl,Font=Enum.Font.GothamBold,TextSize=8,ZIndex=5})
-            local dl   = ni("Frame",sf,{Size=UDim2.new(1,0,0,1),Position=UDim2.new(0,0,1,-1),BackgroundColor3=th.Acc,BackgroundTransparency=.62,ZIndex=5})
-
-            -- collapse / expand section items
-            hdr.MouseButton1Click:Connect(function()
-                opened = not opened
-                tw(chev,{Rotation=opened and 0 or -90},.2)
-                tw(dl,{BackgroundTransparency=opened and .62 or .85},.2)
-                -- find items added after this section
-                local inSection = false
-                for _, child in ipairs(page:GetChildren()) do
-                    if child == sf then inSection=true; continue end
-                    if inSection then
-                        if child:FindFirstChild("_sectionEnd") then break end
-                        tw(child,{Size=UDim2.new(1,0,0, opened and child:GetAttribute("origH") or 0)},.2)
-                        child.Visible = opened
-                    end
-                end
-            end)
+            local sf = ni("Frame",page,{Size=UDim2.new(1,0,0,22),BackgroundTransparency=1,ZIndex=4,LayoutOrder=eo()})
+            -- Left accent dot
+            local dot = ni("Frame",sf,{Size=UDim2.new(0,3,0,3),Position=UDim2.new(0,2,0,8),BackgroundColor3=th.Acc,ZIndex=5}); C(dot,2)
+            ni("TextLabel",sf,{
+                Size=UDim2.new(1,-14,0,14),Position=UDim2.new(0,9,0,4),
+                BackgroundTransparency=1,Text=s:upper(),
+                TextColor3=th.SecLbl,Font=Enum.Font.GothamBold,TextSize=8,
+                TextXAlignment=Enum.TextXAlignment.Left,ZIndex=5,
+            })
+            -- Full-width gradient divider
+            local dl = ni("Frame",sf,{Size=UDim2.new(1,0,0,1),Position=UDim2.new(0,0,1,-1),BackgroundColor3=th.Acc,BackgroundTransparency=.55,ZIndex=5})
+            ni("UIGradient",dl,{
+                Rotation=0,
+                Transparency=NumberSequence.new({
+                    NumberSequenceKeypoint.new(0,.3),
+                    NumberSequenceKeypoint.new(.4,.55),
+                    NumberSequenceKeypoint.new(1,1),
+                }),
+            })
         end
 
         -- ── Toggle ────────────────────────────────────────────────────────────
@@ -750,8 +877,14 @@ function Vula:CreateWindow(opts)
             if val then startDot() end
 
             local hit=ni("TextButton",row,{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text="",ZIndex=9,AutoButtonColor=false})
-            hit.MouseEnter:Connect(function() tw(row,{BackgroundColor3=th.CardH},.14) end)
-            hit.MouseLeave:Connect(function() tw(row,{BackgroundColor3=th.Card},.14) end)
+            hit.MouseEnter:Connect(function()
+                tw(row,{BackgroundColor3=th.CardH},.14)
+                tw(rSt,{Transparency=.15},.14)
+            end)
+            hit.MouseLeave:Connect(function()
+                tw(row,{BackgroundColor3=th.Card},.14)
+                tw(rSt,{Transparency= val and .42 or .28},.14)
+            end)
             hit.MouseButton1Down:Connect(function() tw(pill,{Size=UDim2.new(0,PW*.83,0,PH*.78)},.06,Enum.EasingStyle.Quint) end)
             local busy=false
             hit.MouseButton1Click:Connect(function()
