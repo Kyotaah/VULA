@@ -417,13 +417,22 @@ function Vula:CreateWindow(opts)
     local lbg=ni("Frame",LD,{Size=UDim2.new(.65,0,0,2),Position=UDim2.new(.175,0,.67,0),BackgroundColor3=th.Div,ZIndex=26}); C(lbg,1)
     local lfl=ni("Frame",lbg,{Size=UDim2.new(0,0,1,0),BackgroundColor3=th.Acc,ZIndex=27}); C(lfl,1)
     task.spawn(function()
-        tw(lfl,{Size=UDim2.new(1,0,1,0)},1.3,Enum.EasingStyle.Quint); task.wait(1.6)
-        tw(LD,{BackgroundTransparency=1},.3)
+        tw(lfl,{Size=UDim2.new(1,0,1,0)},1.2,Enum.EasingStyle.Quint)
+        task.wait(1.4)
+        -- Fade the whole overlay cleanly then destroy it
+        tw(LD,{BackgroundTransparency=1},.28)
         for _,d in ipairs(LD:GetDescendants()) do
-            if d:IsA("TextLabel") then tw(d,{TextTransparency=1},.22)
-            elseif d:IsA("Frame") then tw(d,{BackgroundTransparency=1},.22) end
+            pcall(function()
+                if d:IsA("TextLabel") or d:IsA("TextButton") then
+                    tw(d,{TextTransparency=1},.2)
+                end
+                if d:IsA("Frame") or d:IsA("ImageLabel") then
+                    tw(d,{BackgroundTransparency=1},.2)
+                end
+            end)
         end
-        task.wait(.35); LD.Visible=false
+        task.wait(.32)
+        if LD and LD.Parent then LD:Destroy() end  -- destroy, not just hide
     end)
 
     -- ── Right-center side opener ─────────────────────────────────────────────
@@ -511,26 +520,41 @@ function Vula:CreateWindow(opts)
 
     -- ── Open / Close ──────────────────────────────────────────────────────────
     local Hidden, Minimised, Deb = false, false, false
-    local OPEN_POS  = UDim2.new(.5, 3, .5, -38)
+    local OPEN_SIZE = UDim2.new(0,WW,0,WH)
+    local OPEN_POS  = UDim2.new(.5,3,.5,-38)
 
     local function open()
         if Deb then return end; Deb=true; Hidden=false
-        shadow.Visible=true; Main.Visible=true
+        shadow.Visible=true
+        -- Start small + transparent then spring open
+        Main.Size=UDim2.new(0,WW,0,WH*.88)
+        Main.Position=UDim2.new(.5,3,.5,-38+10)
         Main.BackgroundTransparency=1
-        Main.Position=UDim2.new(.5,3,.5,-38+12)
-        -- fade + slide up into position
-        tw(Main,{BackgroundTransparency=0,Position=OPEN_POS},.32,Enum.EasingStyle.Back)
+        Main.Visible=true
+        SB.Visible=true; Cont.Visible=true
         arrowLbl.Text="‹"
-        task.delay(.36,function() Deb=false end)
+        tw(Main,{Size=OPEN_SIZE,Position=OPEN_POS,BackgroundTransparency=0},.3,Enum.EasingStyle.Back)
+        task.delay(.32,function() Deb=false end)
     end
+
     local function close(silent)
         if Deb then return end; Deb=true; Hidden=true
-        -- slide down + fade out
-        tw(Main,{BackgroundTransparency=1,Position=UDim2.new(.5,3,.5,-38+10)},.2,Enum.EasingStyle.Quint,Enum.EasingDirection.In)
         arrowLbl.Text="›"
-        task.delay(.22,function() Main.Visible=false; shadow.Visible=false; Main.Position=OPEN_POS; Deb=false end)
-        if not silent then Vula:Notify({Title="Hidden",Content="Side tab to reopen.",Duration=3,Type="info"}) end
+        -- Shrink + fade simultaneously — affects the whole window visually
+        tw(Main,{Size=UDim2.new(0,WW,0,WH*.88),Position=UDim2.new(.5,3,.5,-38+10),BackgroundTransparency=1},.18,Enum.EasingStyle.Quint,Enum.EasingDirection.In)
+        task.delay(.2,function()
+            Main.Visible=false
+            shadow.Visible=false
+            Main.Size=OPEN_SIZE
+            Main.Position=OPEN_POS
+            Main.BackgroundTransparency=0
+            Deb=false
+        end)
+        if not silent then
+            Vula:Notify({Title="Hidden",Content="Side tab or RightShift to reopen.",Duration=3,Type="info"})
+        end
     end
+
     local function toggle() if Hidden then open() else close(true) end end
 
     oClose.MouseButton1Click:Connect(function() close(true) end)
