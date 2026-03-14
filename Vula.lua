@@ -666,7 +666,7 @@ function Vula:CreateWindow(opts)
 
             local hdr = ni("TextButton",sf,{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text="",ZIndex=5,AutoButtonColor=false})
             ni("TextLabel",sf,{Size=UDim2.new(1,-20,0,13),Position=UDim2.new(0,1,0,4),BackgroundTransparency=1,Text=s:upper(),TextColor3=th.SecLbl,Font=Enum.Font.GothamBold,TextSize=8,TextXAlignment=Enum.TextXAlignment.Left,ZIndex=5})
-            local chev = ni("TextLabel",sf,{Size=UDim2.new(0,14,0,13),Position=UDim2.new(1,-14,0,4),BackgroundTransparency=1,Text="▾",TextColor3=th.SecLbl,Font=Enum.Font.GothamBold,TextSize=8,ZIndex=5})
+            local chev = ni("TextLabel",sf,{Size=UDim2.new(0,14,0,13),Position=UDim2.new(1,-14,0,4),BackgroundTransparency=1,Text="↓",TextColor3=th.SecLbl,Font=Enum.Font.GothamBold,TextSize=8,ZIndex=5})
             local dl   = ni("Frame",sf,{Size=UDim2.new(1,0,0,1),Position=UDim2.new(0,0,1,-1),BackgroundColor3=th.Acc,BackgroundTransparency=.62,ZIndex=5})
 
             -- collapse / expand section items
