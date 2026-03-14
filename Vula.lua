@@ -416,13 +416,13 @@ function Vula:CreateWindow(opts)
     ni("TextLabel",LD,{Size=UDim2.new(.9,0,0,14),Position=UDim2.new(.05,0,.56,0),BackgroundTransparency=1,Text=loadS,TextColor3=th.Dim,Font=Enum.Font.GothamMedium,TextSize=9,ZIndex=26})
     local lbg=ni("Frame",LD,{Size=UDim2.new(.65,0,0,2),Position=UDim2.new(.175,0,.67,0),BackgroundColor3=th.Div,ZIndex=26}); C(lbg,1)
     local lfl=ni("Frame",lbg,{Size=UDim2.new(0,0,1,0),BackgroundColor3=th.Acc,ZIndex=27}); C(lfl,1)
-    task.spawn(function()
-        tw(lfl, {Size=UDim2.new(1,0,1,0)}, 1.1, Enum.EasingStyle.Quint)
-        task.wait(1.3)
-        -- Just fade the overlay frame itself, then remove it
-        tw(LD, {BackgroundTransparency=1}, .3)
-        task.wait(.35)
-        if LD and LD.Parent then LD:Destroy() end
+    -- Animate progress bar, then destroy overlay via task.delay (no task.wait needed)
+    tw(lfl, {Size=UDim2.new(1,0,1,0)}, 1.1, Enum.EasingStyle.Quint)
+    task.delay(1.2, function()
+        tw(LD, {BackgroundTransparency=1}, .28)
+        task.delay(.32, function()
+            if LD and LD.Parent then LD:Destroy() end
+        end)
     end)
 
     -- ── Right-center side opener ─────────────────────────────────────────────
@@ -485,18 +485,20 @@ function Vula:CreateWindow(opts)
     })
 
     -- Drag SideTab vertically (Y only, stuck to right edge)
+    -- _tabMoved is a plain Lua upvalue — NOT stored on the Instance
+    local _tabMoved = false
     do
-        local dr,dsy,sy0=false,0,0; local dc; local moved=false
+        local dr,dsy,sy0=false,0,0; local dc
         SideTab.InputBegan:Connect(function(i,gpe)
             if gpe then return end
             if i.UserInputType~=Enum.UserInputType.MouseButton1 and i.UserInputType~=Enum.UserInputType.Touch then return end
-            dr=true; moved=false
+            dr=true; _tabMoved=false
             dsy=UIS:GetMouseLocation().Y; sy0=SideTab.Position.Y.Offset
             if dc then dc:Disconnect() end
             dc=Run.Heartbeat:Connect(function()
                 if not dr then dc:Disconnect(); return end
                 local dy = UIS:GetMouseLocation().Y - dsy
-                if math.abs(dy) > 4 then moved=true end
+                if math.abs(dy) > 4 then _tabMoved=true end
                 SideTab.Position = UDim2.new(1, 0, .5, sy0 + dy)
             end)
         end)
@@ -505,7 +507,6 @@ function Vula:CreateWindow(opts)
                 dr=false
             end
         end)
-        SideTab._moved = function() return moved end
     end
 
     -- ── Open / Close ──────────────────────────────────────────────────────────
@@ -566,7 +567,7 @@ function Vula:CreateWindow(opts)
 
     tabBtn.MouseButton1Click:Connect(function()
         -- Only toggle if the drag didn't move more than threshold
-        if not SideTab._moved() then toggle() end
+        if not _tabMoved then toggle() end
     end)
 
     tabBtn.MouseEnter:Connect(function()
