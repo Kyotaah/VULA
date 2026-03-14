@@ -426,62 +426,87 @@ function Vula:CreateWindow(opts)
         task.wait(.35); LD.Visible=false
     end)
 
-    -- ── Vertical side opener ──────────────────────────────────────────────────
-    -- A slim tab anchored to the right edge, draggable vertically
-    local TAB_W, TAB_H = 22, 90
+    -- ── Right-center side opener ─────────────────────────────────────────────
+    -- A polished pill-shaped tab on the right edge, draggable vertically.
+    -- Shows accent color bar + arrow + active dot. Slides GUI in/out.
+    local TAB_W, TAB_H = 28, 72
+
     local SideTab = ni("Frame", sg, {
-        Size    = UDim2.new(0, TAB_W, 0, TAB_H),
-        Position= UDim2.new(1, 0, .5, -TAB_H/2),
-        AnchorPoint = Vector2.new(1, 0),
+        Size         = UDim2.new(0, TAB_W, 0, TAB_H),
+        Position     = UDim2.new(1, 0, .5, -TAB_H/2),
+        AnchorPoint  = Vector2.new(1, 0),
         BackgroundColor3 = th.Pill,
-        ZIndex  = 55,
+        ZIndex       = 55,
     })
-    -- Round only the left side by using a large corner radius
-    C(SideTab, TAB_W // 2)
-    St(SideTab, th.Acc, 1, .1)
+    C(SideTab, TAB_W // 2)   -- fully-rounded left cap
+    St(SideTab, th.Acc, 1, .08)
+
+    -- Subtle vertical gradient tint from accent color
     ni("UIGradient", SideTab, {
-        Rotation = 0,
-        ColorSequence = ColorSequence.new(th.Acc, th.Pill),
-        Transparency  = NumberSequence.new({NumberSequenceKeypoint.new(0,.84),NumberSequenceKeypoint.new(1,.96)}),
+        Rotation = 90,
+        ColorSequence = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, th.Acc),
+            ColorSequenceKeypoint.new(1, th.Pill),
+        }),
+        Transparency = NumberSequence.new({
+            NumberSequenceKeypoint.new(0, .82),
+            NumberSequenceKeypoint.new(1, .94),
+        }),
     })
 
-    -- Pulsing dot (active loops indicator)
+    -- Left accent bar (3px, full height, rounded)
+    local tabBar = ni("Frame", SideTab, {
+        Size=UDim2.new(0,3,1,-8), Position=UDim2.new(0,0,.5,0),
+        AnchorPoint=Vector2.new(0,.5), BackgroundColor3=th.Acc,
+        BackgroundTransparency=.1, ZIndex=57,
+    }); C(tabBar, 2)
+    ni("UIGradient", tabBar, {
+        Rotation=90,
+        ColorSequence=ColorSequence.new({
+            ColorSequenceKeypoint.new(0, th.AccD),
+            ColorSequenceKeypoint.new(.5, th.Acc),
+            ColorSequenceKeypoint.new(1, th.AccD),
+        }),
+    })
+
+    -- Active-loop indicator dot (top center)
     local pillDot = ni("Frame", SideTab, {
-        Size=UDim2.new(0,6,0,6), Position=UDim2.new(.5,0,0,8),
+        Size=UDim2.new(0,7,0,7), Position=UDim2.new(.5,0,0,6),
         AnchorPoint=Vector2.new(.5,0), BackgroundColor3=th.Acc,
-        BackgroundTransparency=1, ZIndex=57,
-    }); C(pillDot, 3)
+        BackgroundTransparency=1, ZIndex=58,
+    }); C(pillDot, 4)
 
-    -- Vertical label: icon arrow + short title stacked
-    -- Arrow indicator: ◀ when open (click to close), ▶ when hidden (click to open)
+    -- Arrow: ‹ (open = GUI visible) or › (closed = GUI hidden)
     local arrowLbl = ni("TextLabel", SideTab, {
-        Size=UDim2.new(1,0,0,16), Position=UDim2.new(0,0,0,22),
-        BackgroundTransparency=1, Text="◀",
-        TextColor3=th.Acc, Font=Enum.Font.GothamBold, TextSize=11, ZIndex=57,
-    })
-    -- Vertical title (rotated via two-char lines)
-    local vTitle = ni("TextLabel", SideTab, {
-        Size=UDim2.new(1,0,0,50), Position=UDim2.new(0,0,0,40),
-        BackgroundTransparency=1,
-        Text="·\nG\nU\nI",
-        TextColor3=th.Dim, Font=Enum.Font.GothamBold, TextSize=8,
-        LineHeight=1.3, ZIndex=56,
+        Size=UDim2.new(1,0,0,22), Position=UDim2.new(0,0,.5,-11),
+        AnchorPoint=Vector2.new(0,0),
+        BackgroundTransparency=1, Text="‹",
+        TextColor3=th.Acc, Font=Enum.Font.GothamBold,
+        TextSize=18, ZIndex=57,
     })
 
-    -- Drag SideTab vertically
+    -- Drag SideTab vertically (Y only, stuck to right edge)
     do
-        local dr,dsy,sy0=false,0,0; local dc
+        local dr,dsy,sy0=false,0,0; local dc; local moved=false
         SideTab.InputBegan:Connect(function(i,gpe)
             if gpe then return end
             if i.UserInputType~=Enum.UserInputType.MouseButton1 and i.UserInputType~=Enum.UserInputType.Touch then return end
-            dr=true; dsy=UIS:GetMouseLocation().Y; sy0=SideTab.Position.Y.Offset
+            dr=true; moved=false
+            dsy=UIS:GetMouseLocation().Y; sy0=SideTab.Position.Y.Offset
             if dc then dc:Disconnect() end
             dc=Run.Heartbeat:Connect(function()
                 if not dr then dc:Disconnect(); return end
-                SideTab.Position=UDim2.new(1,0,.5,(sy0+(UIS:GetMouseLocation().Y-dsy)))
+                local dy = UIS:GetMouseLocation().Y - dsy
+                if math.abs(dy) > 4 then moved=true end
+                SideTab.Position = UDim2.new(1, 0, .5, sy0 + dy)
             end)
         end)
-        UIS.InputEnded:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then dr=false end end)
+        UIS.InputEnded:Connect(function(i)
+            if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
+                dr=false
+            end
+        end)
+        SideTab._moved = function() return moved end
     end
 
     -- ── Open / Close ──────────────────────────────────────────────────────────
@@ -495,14 +520,14 @@ function Vula:CreateWindow(opts)
         Main.Position=UDim2.new(.5,3,.5,-38+12)
         -- fade + slide up into position
         tw(Main,{BackgroundTransparency=0,Position=OPEN_POS},.32,Enum.EasingStyle.Back)
-        arrowLbl.Text="◀"
+        arrowLbl.Text="‹"
         task.delay(.36,function() Deb=false end)
     end
     local function close(silent)
         if Deb then return end; Deb=true; Hidden=true
         -- slide down + fade out
         tw(Main,{BackgroundTransparency=1,Position=UDim2.new(.5,3,.5,-38+10)},.2,Enum.EasingStyle.Quint,Enum.EasingDirection.In)
-        arrowLbl.Text="▶"
+        arrowLbl.Text="›"
         task.delay(.22,function() Main.Visible=false; shadow.Visible=false; Main.Position=OPEN_POS; Deb=false end)
         if not silent then Vula:Notify({Title="Hidden",Content="Side tab to reopen.",Duration=3,Type="info"}) end
     end
@@ -520,28 +545,24 @@ function Vula:CreateWindow(opts)
         end
     end)
 
-    -- SideTab click to toggle (only when not dragging)
-    local tabDragMoved = false
-    SideTab.InputBegan:Connect(function(i,gpe)
-        if gpe then return end
-        if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
-            tabDragMoved=false
-        end
-    end)
-    SideTab.InputChanged:Connect(function(i)
-        if i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch then
-            tabDragMoved=true
-        end
-    end)
+    -- SideTab: click toggles GUI, drag moves it (separated by _moved flag)
     SideTab.InputEnded:Connect(function(i,gpe)
         if gpe then return end
-        if (i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch) and not tabDragMoved then
-            toggle()
+        if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
+            if not SideTab._moved() then toggle() end
         end
     end)
-    -- Hover expand
-    SideTab.MouseEnter:Connect(function() tw(SideTab,{Size=UDim2.new(0,TAB_W+5,0,TAB_H)},.16,Enum.EasingStyle.Back) end)
-    SideTab.MouseLeave:Connect(function() tw(SideTab,{Size=UDim2.new(0,TAB_W,0,TAB_H)},.14) end)
+    -- Hover: expand width + brighten arrow
+    SideTab.MouseEnter:Connect(function()
+        tw(SideTab, {Size=UDim2.new(0,TAB_W+8,0,TAB_H)}, .18, Enum.EasingStyle.Back)
+        tw(arrowLbl, {TextTransparency=0,  TextColor3=th.Text}, .14)
+        tw(tabBar,   {BackgroundTransparency=0}, .14)
+    end)
+    SideTab.MouseLeave:Connect(function()
+        tw(SideTab, {Size=UDim2.new(0,TAB_W,0,TAB_H)}, .14)
+        tw(arrowLbl, {TextTransparency=.1, TextColor3=th.Acc}, .14)
+        tw(tabBar,   {BackgroundTransparency=.1}, .14)
+    end)
 
     UIS.InputBegan:Connect(function(i,gpe) if gpe then return end; if i.KeyCode==Enum.KeyCode.RightShift then toggle() end end)
 
