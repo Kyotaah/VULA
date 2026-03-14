@@ -630,14 +630,14 @@ function Vula:CreateWindow(opts)
 
     -- ── Drop shadow ────────────────────────────────────────────────────────────
     local shadow = ni("Frame", sg, {
-        Size             = UDim2.new(0, WW + 28, 0, WH + 28),
-        Position         = UDim2.new(0.5, 4, 0.5, -36),
+        Size             = UDim2.new(0, WW + 12, 0, WH + 12),
+        Position         = UDim2.new(0.5, 3, 0.5, -35),
         AnchorPoint      = Vector2.new(0.5, 0.5),
-        BackgroundColor3 = th.Acc,
-        BackgroundTransparency = 0.90,
+        BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+        BackgroundTransparency = 0.62,
         ZIndex           = 1,
     })
-    C(shadow, 20)
+    C(shadow, 18)
 
     -- ── Main window ────────────────────────────────────────────────────────────
     local Main = ni("Frame", sg, {
@@ -1453,6 +1453,13 @@ function Vula:CreateWindow(opts)
             })
             C(dot, 3)
 
+            -- Pill toggle sizing — must be defined before nameLbl uses PW
+            local PW  = mob and 48 or 38
+            local PH  = mob and 26 or 20
+            local KS  = mob and 20 or 14
+            local K0  = 3
+            local K1  = PW - KS - 3
+
             -- Name label
             local nameLbl = ni("TextLabel", row, {
                 Size                = UDim2.new(1, -(PW + 28), 1, 0),
@@ -1467,11 +1474,6 @@ function Vula:CreateWindow(opts)
             })
 
             -- Pill toggle — larger on mobile for finger targets
-            local PW  = mob and 48 or 38
-            local PH  = mob and 26 or 20
-            local KS  = mob and 20 or 14
-            local K0  = 3
-            local K1  = PW - KS - 3
             local pill = ni("Frame", row, {
                 Size             = UDim2.new(0, PW, 0, PH),
                 Position         = UDim2.new(1, -(PW + 10), 0.5, 0),
