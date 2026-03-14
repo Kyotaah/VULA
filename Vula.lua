@@ -175,7 +175,7 @@ Vula.Theme = {
 -- ── Notify ─────────────────────────────────────────────────────────────────────
 local _nsg, _nst = nil, {}
 local NW, NH, NG = 230, 48, 4
-local NOTIFY_ICON  = { info="ℹ", success="✓", warn="⚠", error="✕" }
+local NOTIFY_ICON  = { info="i", success="+", warn="!", error="x" }
 local NOTIFY_COL   = { info="NInfo", success="NSucc", warn="NWarn", error="NErr" }
 
 local function getNSG()
@@ -369,10 +369,10 @@ function Vula:CreateWindow(opts)
     -- Badge
     local bdg = ni("Frame",TB,{Size=UDim2.new(0,22,0,22),Position=UDim2.new(0,9,.5,0),AnchorPoint=Vector2.new(0,.5),BackgroundColor3=th.Acc,ZIndex=6}); C(bdg,11)
     ni("UIGradient",bdg,{Rotation=135,ColorSequence=ColorSequence.new(th.Acc,th.AccD)})
-    ni("TextLabel",bdg,{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text="呪",TextColor3=Color3.new(1,1,1),Font=Enum.Font.GothamBold,TextSize=11,ZIndex=7})
+    ni("TextLabel",bdg,{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text="JJK",TextColor3=Color3.new(1,1,1),Font=Enum.Font.GothamBold,TextSize=11,ZIndex=7})
 
     ni("TextLabel",TB,{Size=UDim2.new(1,-108,0,18),Position=UDim2.new(0,36,0,4),BackgroundTransparency=1,Text=title,TextColor3=th.Text,Font=Enum.Font.GothamBold,TextSize=12,TextXAlignment=Enum.TextXAlignment.Left,ZIndex=6})
-    ni("TextLabel",TB,{Size=UDim2.new(1,-108,0,11),Position=UDim2.new(0,36,0,23),BackgroundTransparency=1,Text="v4.0 · "..tname,TextColor3=th.Dim,Font=Enum.Font.GothamMedium,TextSize=8,TextXAlignment=Enum.TextXAlignment.Left,ZIndex=6})
+    ni("TextLabel",TB,{Size=UDim2.new(1,-108,0,11),Position=UDim2.new(0,36,0,23),BackgroundTransparency=1,Text="v4.0 - "..tname,TextColor3=th.Dim,Font=Enum.Font.GothamMedium,TextSize=8,TextXAlignment=Enum.TextXAlignment.Left,ZIndex=6})
 
     -- macOS orbs
     local function mkOrb(xOff, col, sym)
@@ -382,8 +382,8 @@ function Vula:CreateWindow(opts)
         o.MouseLeave:Connect(function() tw(o,{BackgroundTransparency=.1},.1); tw(l,{TextTransparency=1},.1) end)
         return o
     end
-    local oClose = mkOrb(-9,  Color3.fromRGB(255,59,48),  "×")
-    local oMin   = mkOrb(-24, Color3.fromRGB(255,149,0),  "–")
+    local oClose = mkOrb(-9,  Color3.fromRGB(255,59,48),  "x")
+    local oMin   = mkOrb(-24, Color3.fromRGB(255,149,0),  "-")
 
     -- Topbar drag
     do
@@ -428,7 +428,7 @@ function Vula:CreateWindow(opts)
     local LD = ni("Frame",Main,{Size=UDim2.new(1,0,1,0),BackgroundColor3=th.Bg,ZIndex=25}); C(LD,10)
     local ldb= ni("Frame",LD,{Size=UDim2.new(0,42,0,42),Position=UDim2.new(.5,0,.32,0),AnchorPoint=Vector2.new(.5,.5),BackgroundColor3=th.Acc,ZIndex=26}); C(ldb,21)
     ni("UIGradient",ldb,{Rotation=135,ColorSequence=ColorSequence.new(th.Acc,th.AccD)})
-    ni("TextLabel",ldb,{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text="呪",TextColor3=Color3.new(1,1,1),Font=Enum.Font.GothamBold,TextSize=17,ZIndex=27})
+    ni("TextLabel",ldb,{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text="JJK",TextColor3=Color3.new(1,1,1),Font=Enum.Font.GothamBold,TextSize=17,ZIndex=27})
     ni("TextLabel",LD,{Size=UDim2.new(.9,0,0,18),Position=UDim2.new(.05,0,.44,0),BackgroundTransparency=1,Text=loadT,TextColor3=th.Text,Font=Enum.Font.GothamBold,TextSize=12,ZIndex=26})
     ni("TextLabel",LD,{Size=UDim2.new(.9,0,0,14),Position=UDim2.new(.05,0,.56,0),BackgroundTransparency=1,Text=loadS,TextColor3=th.Dim,Font=Enum.Font.GothamMedium,TextSize=9,ZIndex=26})
     local lbg = ni("Frame",LD,{Size=UDim2.new(.65,0,0,2),Position=UDim2.new(.175,0,.67,0),BackgroundColor3=th.Div,ZIndex=26}); C(lbg,1)
@@ -461,7 +461,7 @@ function Vula:CreateWindow(opts)
     })
     -- Status dot on pill (shows when any loop is active — set externally)
     local pillDot = ni("Frame",Pill,{Size=UDim2.new(0,6,0,6),Position=UDim2.new(0,10,.5,0),AnchorPoint=Vector2.new(0,.5),BackgroundColor3=th.Acc,BackgroundTransparency=1,ZIndex=57}); C(pillDot,3)
-    local pillLbl = ni("TextLabel",Pill,{Size=UDim2.new(1,-6,1,0),Position=UDim2.new(0,3,0,0),BackgroundTransparency=1,Text="▲  "..title,TextColor3=th.Text,Font=Enum.Font.GothamBold,TextSize=9,ZIndex=56})
+    local pillLbl = ni("TextLabel",Pill,{Size=UDim2.new(1,-6,1,0),Position=UDim2.new(0,3,0,0),BackgroundTransparency=1,Text="^ "..title,TextColor3=th.Text,Font=Enum.Font.GothamBold,TextSize=9,ZIndex=56})
 
     -- Pill drag (Y axis, right side)
     do
@@ -495,7 +495,7 @@ function Vula:CreateWindow(opts)
                 pcall(function() if d.TextTransparency < 1 then d.TextTransparency=1 end end)
             end
         end
-        pillLbl.Text="▲  "..title
+        pillLbl.Text="^ "..title
         tw(Main, {BackgroundTransparency=0, Position=OPEN_POS}, .36, Enum.EasingStyle.Back)
         task.delay(.18, function()
             for _,d in ipairs(Main:GetDescendants()) do
@@ -510,7 +510,7 @@ function Vula:CreateWindow(opts)
     end
     local function close(silent)
         if Deb then return end; Deb=true; Hidden=true
-        pillLbl.Text="▼  "..title
+        pillLbl.Text="v "..title
         tw(Main, {BackgroundTransparency=1, Position=CLOSE_POS, Size=UDim2.new(0,WW,0,WH-8)},
             .22, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
         task.delay(.24, function()
@@ -666,7 +666,7 @@ function Vula:CreateWindow(opts)
 
             local hdr = ni("TextButton",sf,{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text="",ZIndex=5,AutoButtonColor=false})
             ni("TextLabel",sf,{Size=UDim2.new(1,-20,0,13),Position=UDim2.new(0,1,0,4),BackgroundTransparency=1,Text=s:upper(),TextColor3=th.SecLbl,Font=Enum.Font.GothamBold,TextSize=8,TextXAlignment=Enum.TextXAlignment.Left,ZIndex=5})
-            local chev = ni("TextLabel",sf,{Size=UDim2.new(0,14,0,13),Position=UDim2.new(1,-14,0,4),BackgroundTransparency=1,Text="↓",TextColor3=th.SecLbl,Font=Enum.Font.GothamBold,TextSize=8,ZIndex=5})
+            local chev = ni("TextLabel",sf,{Size=UDim2.new(0,14,0,13),Position=UDim2.new(1,-14,0,4),BackgroundTransparency=1,Text="v",TextColor3=th.SecLbl,Font=Enum.Font.GothamBold,TextSize=8,ZIndex=5})
             local dl   = ni("Frame",sf,{Size=UDim2.new(1,0,0,1),Position=UDim2.new(0,0,1,-1),BackgroundColor3=th.Acc,BackgroundTransparency=.62,ZIndex=5})
 
             -- collapse / expand section items
@@ -774,7 +774,7 @@ function Vula:CreateWindow(opts)
             local fill=ni("Frame",row,{Size=UDim2.new(0,0,1,0),BackgroundColor3=th.Acc,BackgroundTransparency=.88,ZIndex=5}); C(fill,6)
             ni("TextLabel",row,{Size=UDim2.new(1,-28,0,18),Position=UDim2.new(0,10,0,sub~="" and 5 or 0),BackgroundTransparency=1,Text=bN,TextColor3=th.Text,Font=Enum.Font.GothamSemibold,TextSize=10,TextXAlignment=Enum.TextXAlignment.Left,ZIndex=6})
             if sub~="" then ni("TextLabel",row,{Size=UDim2.new(1,-28,0,14),Position=UDim2.new(0,10,0,22),BackgroundTransparency=1,Text=sub,TextColor3=th.Dim,Font=Enum.Font.GothamMedium,TextSize=8,TextXAlignment=Enum.TextXAlignment.Left,ZIndex=6}) end
-            local arr=ni("TextLabel",row,{Size=UDim2.new(0,18,1,0),Position=UDim2.new(1,-20,0,0),BackgroundTransparency=1,Text="›",TextColor3=th.Dim,Font=Enum.Font.GothamBold,TextSize=14,ZIndex=6})
+            local arr=ni("TextLabel",row,{Size=UDim2.new(0,18,1,0),Position=UDim2.new(1,-20,0,0),BackgroundTransparency=1,Text=">",TextColor3=th.Dim,Font=Enum.Font.GothamBold,TextSize=14,ZIndex=6})
             local hit=ni("TextButton",row,{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text="",ZIndex=9,AutoButtonColor=false})
             hit.MouseEnter:Connect(function()
                 tw(row,{BackgroundColor3=th.CardH},.14); tw(fill,{Size=UDim2.new(1,0,1,0)},.26)
@@ -977,7 +977,7 @@ function Vula:CreateWindow(opts)
             ni("TextLabel",hdr,{Size=UDim2.new(1,-42,1,0),Position=UDim2.new(0,10,0,0),BackgroundTransparency=1,Text=dN,TextColor3=th.Text,Font=Enum.Font.GothamSemibold,TextSize=10,TextXAlignment=Enum.TextXAlignment.Left,ZIndex=6})
             local cntBg=ni("Frame",hdr,{Size=UDim2.new(0,26,0,16),Position=UDim2.new(1,-34,.5,0),AnchorPoint=Vector2.new(0,.5),BackgroundColor3=th.InBg,ZIndex=7}); C(cntBg,4)
             local cntLbl=ni("TextLabel",cntBg,{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text="0",TextColor3=th.Acc,Font=Enum.Font.GothamBold,TextSize=8,ZIndex=8})
-            local chev=ni("TextLabel",hdr,{Size=UDim2.new(0,14,1,0),Position=UDim2.new(1,-16,0,0),BackgroundTransparency=1,Text="▾",TextColor3=th.Dim,Font=Enum.Font.GothamBold,TextSize=10,ZIndex=7})
+            local chev=ni("TextLabel",hdr,{Size=UDim2.new(0,14,1,0),Position=UDim2.new(1,-16,0,0),BackgroundTransparency=1,Text="v",TextColor3=th.Dim,Font=Enum.Font.GothamBold,TextSize=10,ZIndex=7})
 
             local iFrame=ni("Frame",wrap,{Size=UDim2.new(1,0,0,#opts2*ITMH+6),Position=UDim2.new(0,0,0,HDRH+1),BackgroundColor3=th.InBg,ZIndex=5}); C(iFrame,6)
             St(iFrame,th.Stroke,1,.32); LL(iFrame,0); Pd(iFrame,4,4,3,3)
@@ -996,7 +996,7 @@ function Vula:CreateWindow(opts)
                 local ib=ni("TextButton",iFrame,{Size=UDim2.new(1,0,0,ITMH),BackgroundColor3=th.Card,BackgroundTransparency=.7,Text="",ZIndex=6,AutoButtonColor=false}); C(ib,4)
                 local chk=ni("Frame",ib,{Size=UDim2.new(0,10,0,10),Position=UDim2.new(0,6,.5,0),AnchorPoint=Vector2.new(0,.5),BackgroundColor3=th.TOff,ZIndex=7}); C(chk,3)
                 St(chk,th.Acc,1,.32)
-                local chkM=ni("TextLabel",chk,{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text="✓",TextColor3=Color3.new(1,1,1),Font=Enum.Font.GothamBold,TextSize=7,TextTransparency=1,ZIndex=8})
+                local chkM=ni("TextLabel",chk,{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text="+",TextColor3=Color3.new(1,1,1),Font=Enum.Font.GothamBold,TextSize=7,TextTransparency=1,ZIndex=8})
                 ni("TextLabel",ib,{Size=UDim2.new(1,-24,1,0),Position=UDim2.new(0,22,0,0),BackgroundTransparency=1,Text=name,TextColor3=th.Dim,Font=Enum.Font.GothamMedium,TextSize=9,TextXAlignment=Enum.TextXAlignment.Left,ZIndex=7})
 
                 local function setChk(v)
