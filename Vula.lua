@@ -417,22 +417,12 @@ function Vula:CreateWindow(opts)
     local lbg=ni("Frame",LD,{Size=UDim2.new(.65,0,0,2),Position=UDim2.new(.175,0,.67,0),BackgroundColor3=th.Div,ZIndex=26}); C(lbg,1)
     local lfl=ni("Frame",lbg,{Size=UDim2.new(0,0,1,0),BackgroundColor3=th.Acc,ZIndex=27}); C(lfl,1)
     task.spawn(function()
-        tw(lfl,{Size=UDim2.new(1,0,1,0)},1.2,Enum.EasingStyle.Quint)
-        task.wait(1.4)
-        -- Fade the whole overlay cleanly then destroy it
-        tw(LD,{BackgroundTransparency=1},.28)
-        for _,d in ipairs(LD:GetDescendants()) do
-            pcall(function()
-                if d:IsA("TextLabel") or d:IsA("TextButton") then
-                    tw(d,{TextTransparency=1},.2)
-                end
-                if d:IsA("Frame") or d:IsA("ImageLabel") then
-                    tw(d,{BackgroundTransparency=1},.2)
-                end
-            end)
-        end
-        task.wait(.32)
-        if LD and LD.Parent then LD:Destroy() end  -- destroy, not just hide
+        tw(lfl, {Size=UDim2.new(1,0,1,0)}, 1.1, Enum.EasingStyle.Quint)
+        task.wait(1.3)
+        -- Just fade the overlay frame itself, then remove it
+        tw(LD, {BackgroundTransparency=1}, .3)
+        task.wait(.35)
+        if LD and LD.Parent then LD:Destroy() end
     end)
 
     -- ── Right-center side opener ─────────────────────────────────────────────
@@ -520,38 +510,37 @@ function Vula:CreateWindow(opts)
 
     -- ── Open / Close ──────────────────────────────────────────────────────────
     local Hidden, Minimised, Deb = false, false, false
-    local OPEN_SIZE = UDim2.new(0,WW,0,WH)
-    local OPEN_POS  = UDim2.new(.5,3,.5,-38)
+    local OPEN_SIZE = UDim2.new(0, WW, 0, WH)
+    local OPEN_POS  = UDim2.new(.5, 3, .5, -38)
 
     local function open()
         if Deb then return end; Deb=true; Hidden=false
-        shadow.Visible=true
-        -- Start small + transparent then spring open
-        Main.Size=UDim2.new(0,WW,0,WH*.88)
-        Main.Position=UDim2.new(.5,3,.5,-38+10)
-        Main.BackgroundTransparency=1
-        Main.Visible=true
-        SB.Visible=true; Cont.Visible=true
-        arrowLbl.Text="‹"
-        tw(Main,{Size=OPEN_SIZE,Position=OPEN_POS,BackgroundTransparency=0},.3,Enum.EasingStyle.Back)
-        task.delay(.32,function() Deb=false end)
+        -- Snap to slightly small/low, make visible, spring to full size
+        Main.Size     = UDim2.new(0, WW, 0, WH - 14)
+        Main.Position = UDim2.new(.5, 3, .5, -38 + 8)
+        Main.Visible  = true
+        shadow.Visible= true
+        arrowLbl.Text = "‹"
+        tw(Main, {Size=OPEN_SIZE, Position=OPEN_POS}, .28, Enum.EasingStyle.Back)
+        task.delay(.3, function() Deb=false end)
     end
 
     local function close(silent)
         if Deb then return end; Deb=true; Hidden=true
-        arrowLbl.Text="›"
-        -- Shrink + fade simultaneously — affects the whole window visually
-        tw(Main,{Size=UDim2.new(0,WW,0,WH*.88),Position=UDim2.new(.5,3,.5,-38+10),BackgroundTransparency=1},.18,Enum.EasingStyle.Quint,Enum.EasingDirection.In)
-        task.delay(.2,function()
-            Main.Visible=false
-            shadow.Visible=false
-            Main.Size=OPEN_SIZE
-            Main.Position=OPEN_POS
-            Main.BackgroundTransparency=0
-            Deb=false
+        arrowLbl.Text = "›"
+        -- Shrink down then snap hidden
+        tw(Main, {Size=UDim2.new(0, WW, 0, WH - 14), Position=UDim2.new(.5, 3, .5, -38 + 8)},
+            .16, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+        task.delay(.18, function()
+            Main.Visible  = false
+            shadow.Visible= false
+            -- Reset so next open() starts correctly
+            Main.Size     = OPEN_SIZE
+            Main.Position = OPEN_POS
+            Deb = false
         end)
         if not silent then
-            Vula:Notify({Title="Hidden",Content="Side tab or RightShift to reopen.",Duration=3,Type="info"})
+            Vula:Notify({Title="Hidden", Content="Side tab or RightShift to reopen.", Duration=3, Type="info"})
         end
     end
 
@@ -569,22 +558,25 @@ function Vula:CreateWindow(opts)
         end
     end)
 
-    -- SideTab: click toggles GUI, drag moves it (separated by _moved flag)
-    SideTab.InputEnded:Connect(function(i,gpe)
-        if gpe then return end
-        if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
-            if not SideTab._moved() then toggle() end
-        end
+    -- TextButton hitbox on top — Frame.InputEnded is unreliable for clicks
+    local tabBtn = ni("TextButton", SideTab, {
+        Size=UDim2.new(1,0,1,0), BackgroundTransparency=1,
+        Text="", ZIndex=60, AutoButtonColor=false,
+    })
+
+    tabBtn.MouseButton1Click:Connect(function()
+        -- Only toggle if the drag didn't move more than threshold
+        if not SideTab._moved() then toggle() end
     end)
-    -- Hover: expand width + brighten arrow
-    SideTab.MouseEnter:Connect(function()
+
+    tabBtn.MouseEnter:Connect(function()
         tw(SideTab, {Size=UDim2.new(0,TAB_W+8,0,TAB_H)}, .18, Enum.EasingStyle.Back)
-        tw(arrowLbl, {TextTransparency=0,  TextColor3=th.Text}, .14)
+        tw(arrowLbl, {TextColor3=th.Text}, .14)
         tw(tabBar,   {BackgroundTransparency=0}, .14)
     end)
-    SideTab.MouseLeave:Connect(function()
+    tabBtn.MouseLeave:Connect(function()
         tw(SideTab, {Size=UDim2.new(0,TAB_W,0,TAB_H)}, .14)
-        tw(arrowLbl, {TextTransparency=.1, TextColor3=th.Acc}, .14)
+        tw(arrowLbl, {TextColor3=th.Acc}, .14)
         tw(tabBar,   {BackgroundTransparency=.1}, .14)
     end)
 
