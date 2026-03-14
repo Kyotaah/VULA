@@ -24,7 +24,12 @@ end
 -- ── Helpers ───────────────────────────────────────────────────────────────────
 local function tw(o, p, d, s, dr)
     if not o or not o.Parent then return end
-    TS:Create(o, TweenInfo.new(d or .26, s or Enum.EasingStyle.Quint, dr or Enum.EasingDirection.Out), p):Play()
+    -- Strip internal theme-tag keys before passing to TweenService
+    local props = {}
+    for k,v in pairs(p) do
+        if type(k) == "string" and k:sub(1,1) ~= "_" then props[k] = v end
+    end
+    TS:Create(o, TweenInfo.new(d or .26, s or Enum.EasingStyle.Quint, dr or Enum.EasingDirection.Out), props):Play()
 end
 local function ni(cls, par, props)
     local i = Instance.new(cls)
@@ -392,7 +397,12 @@ end
 -- ── Helpers ───────────────────────────────────────────────────────────────────
 local function tw(o, p, d, s, dr)
     if not o or not o.Parent then return end
-    TS:Create(o, TweenInfo.new(d or .26, s or Enum.EasingStyle.Quint, dr or Enum.EasingDirection.Out), p):Play()
+    -- Strip internal theme-tag keys before passing to TweenService
+    local props = {}
+    for k,v in pairs(p) do
+        if type(k) == "string" and k:sub(1,1) ~= "_" then props[k] = v end
+    end
+    TS:Create(o, TweenInfo.new(d or .26, s or Enum.EasingStyle.Quint, dr or Enum.EasingDirection.Out), props):Play()
 end
 local function ni(cls, par, props)
     local i = Instance.new(cls)
@@ -1229,7 +1239,6 @@ function Vula:CreateWindow(opts)
                 tw(trackFill,{Size=UDim2.new(pct,0,1,0)},.07)
                 tw(thumb,    {Position=UDim2.new(pct,0,.5,0)},.07)
                 valLbl.Text=tostring(v)..sfx
-                if fl then Vula.Flags[fl]=v end
                 if fire and cb then cb(v) end
             end
             local hit=ni("TextButton",trackBg,{Size=UDim2.new(1,TS2*2,0,28),Position=UDim2.new(0,-TS2,.5,0),AnchorPoint=Vector2.new(0,.5),BackgroundTransparency=1,Text="",ZIndex=9,AutoButtonColor=false})
@@ -1257,6 +1266,7 @@ function Vula:CreateWindow(opts)
             local sl={Value=val,Type="Slider"}
             function sl:Set(v) setVal(v,false) end
             function sl:Get() return val end
+            if fl then Vula.Flags[fl]=sl end  -- store object so :Set() works
             setVal(val,false); return sl
         end
 
